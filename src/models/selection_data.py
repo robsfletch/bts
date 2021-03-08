@@ -9,6 +9,7 @@ import pickle
 import click
 
 @click.command()
+@click.argument('interim', type=click.Path(exists=True))
 @click.argument('processed', type=click.Path(exists=True))
 def main(interim, processed):
 
@@ -19,8 +20,8 @@ def main(interim, processed):
     hits = pd.read_pickle(Path(interim) / 'hits.pkl')
     selections = pd.read_pickle(Path(processed) / 'main_selection.pkl')
 
-    selection_data = selections.merge(hits, on =['GAME_ID', 'BAT_ID'])
-    selection_data = selection_data.merge(main_data, on =['GAME_ID', 'BAT_ID'])
+    # selection_data = selections.merge(hits, on =['GAME_ID', 'BAT_ID'])
+    selection_data = selections.merge(main_data, on =['GAME_ID', 'BAT_ID'])
     selection_data = selection_data.set_index(['Date', 'pick_order'])
 
     selection_data.to_pickle(Path(processed) / 'selection_data.pkl')

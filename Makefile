@@ -16,6 +16,35 @@ else
 HAS_CONDA=True
 endif
 
+raw_data = data/raw
+interim_data = data/interim
+processed_data = data/processed
+
+game_logs = $(interim_data)/game_logs.pkl
+events = $(interim_data)/events.pkl
+rosters = $(interim_data)/rosters.pkl
+
+hits = $(interim_data)/hits.pkl
+directory = $(interim_data)/directory.pkl
+batting_records = $(interim_data)/batting_records.pkl
+pitching_records = $(interim_data)/pitching_records.pkl
+park_records = $(interim_data)/park_records.pkl
+
+panel = $(interim_data)/panel.pkl
+merged_data = $(interim_data)/merged_data.pkl
+main_data = $(processed_data)/main_data.pkl
+
+main_data_X = $(processed_data)/main_data_X.npy
+main_data_Y = $(processed_data)/main_data_Y.npy
+
+selection = $(processed_data)/main_selection.pkl
+selection_data = $(processed_data)/selection_data.pkl
+
+logistic = models/logistic_model.pkl
+
+VPATH = src/data:$\
+				src/features:$\
+				src/models
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
@@ -26,8 +55,7 @@ requirements: test_environment
 	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
 
 ## Make Dataset
-data: requirements
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
+data: $(selection_data)
 
 ## Delete all compiled Python files
 clean:
@@ -76,9 +104,64 @@ endif
 test_environment:
 	$(PYTHON_INTERPRETER) test_environment.py
 
+
+prediction:
+
+
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
+$(selection_data): selection_data.py $(selection) $(main_data) $(hits)
+	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
+
+$(selection): predict_model.py $(main_data) $(logistic) modelsetup.py
+	$(PYTHON_INTERPRETER) $< $(main_data) $(logistic) $(selection)
+
+$(logistic): train_model.py $(main_data) modelsetup.py
+	$(PYTHON_INTERPRETER) $< $(processed_data) models
+
+$(main_data): main_data.py $(merged_data)
+	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
+
+$(merged_data): merged_data.py $(panel) $(hits) $(batting_records) $(pitching_records) $(park_records)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(panel): panel.py $(game_logs)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(hits): hits.py $(events)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(park_records): park_records.py $(game_logs)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(pitching_records): pitching_records.py $(events) $(directory)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(batting_records): batting_records.py $(events) $(directory)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(directory): directory.py $(rosters)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(events): events.py
+	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
+$(game_logs): game_logs.py
+	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
+$(rosters): rosters.py
+	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
+raw_events:
+	src/data/import_events.sh
+#################################################################################
+# Clearing
+#################################################################################
+clear:
+	rm -f $(rosters)
+	rm -f $(game_logs)
+	rm -f $(events)
 
 
 
