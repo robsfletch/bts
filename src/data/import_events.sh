@@ -7,6 +7,6 @@ unzip "data/raw/events/*seve.zip" -d data/raw/events
 cd data/raw/events
 for year in {1920..2020}
 do
-  cwevent -y $year ${year}*.EV* > Events${year}.txt
+  cwevent -f 0-96 -x 0-62 -y $year ${year}*.EV* > Events${year}.txt
 done
 cd -

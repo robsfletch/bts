@@ -9,22 +9,48 @@ import logging
 def main(interim):
     panel = pd.read_pickle(Path(interim) / 'panel.pkl')
     hits = pd.read_pickle(Path(interim) / 'hits.pkl')
+    pitching_games = pd.read_pickle(Path(interim) / 'pitching_games.pkl')
     batting_records = pd.read_pickle(Path(interim) / 'batting_records.pkl')
     pitching_records = pd.read_pickle(Path(interim) / 'pitching_records.pkl')
     park_records = pd.read_pickle(Path(interim) / 'park_records.pkl')
 
+
+    ## BATING HITS
     merged_data = panel.merge(hits, on=['GAME_ID', 'BAT_ID'])
+
+    ## PITCHING HITS
+    merged_data = merged_data.merge(
+        pitching_games['avg_game_score'],
+        on=['GAME_ID', 'PIT_ID']
+    )
+
+    merged_data = merged_data.merge(
+        pitching_games['avg_game_score'],
+        left_on=['GAME_ID', 'TEAM_PIT_ID'],
+        right_on=['GAME_ID', 'PIT_ID'],
+        suffixes=('','_team')
+    )
+
+    # Last season year
     merged_data['last_year'] = merged_data['year'] - 1
+
+    ## BATTING SEASON RECORDS
     batting_records = batting_records.reset_index()
     batting_records = batting_records.rename(columns={'year':'last_year'})
     merged_data = merged_data.merge(
         batting_records, on=['BAT_ID', 'last_year'], how='left')
 
+    ## PITCHING SEASON RECORDS
     pitching_records = pitching_records.reset_index()
     pitching_records = pitching_records.rename(columns={'year':'last_year',})
     merged_data = merged_data.merge(
         pitching_records, on=['PIT_ID', 'last_year'], how='left')
+    merged_data = merged_data.merge(
+        pitching_records, left_on = ['TEAM_PIT_ID', 'last_year'],
+        right_on=['PIT_ID', 'last_year'], how='left',
+        suffixes = ("", "_team"))
 
+    ## PARK RECORDS
     park_records = park_records.reset_index()
     park_records = park_records.rename(columns={'year':'last_year',})
     merged_data = merged_data.merge(

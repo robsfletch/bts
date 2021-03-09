@@ -25,6 +25,7 @@ events = $(interim_data)/events.pkl
 rosters = $(interim_data)/rosters.pkl
 
 hits = $(interim_data)/hits.pkl
+pitching_games = $(interim_data)/pitching_games.pkl
 directory = $(interim_data)/directory.pkl
 batting_records = $(interim_data)/batting_records.pkl
 pitching_records = $(interim_data)/pitching_records.pkl
@@ -123,10 +124,13 @@ $(logistic): train_model.py $(main_data) modelsetup.py
 $(main_data): main_data.py $(merged_data)
 	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
 
-$(merged_data): merged_data.py $(panel) $(hits) $(batting_records) $(pitching_records) $(park_records)
+$(merged_data): merged_data.py $(panel) $(hits) $(batting_records) $(pitching_records) $(park_records) $(pitching_games)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(panel): panel.py $(game_logs)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(pitching_games): pitching_games.py $(events)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(hits): hits.py $(events)
