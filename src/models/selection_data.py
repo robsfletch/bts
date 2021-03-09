@@ -12,10 +12,6 @@ import click
 @click.argument('interim', type=click.Path(exists=True))
 @click.argument('processed', type=click.Path(exists=True))
 def main(interim, processed):
-
-    interim = 'data/interim'
-    processed = 'data/processed'
-
     main_data = pd.read_pickle(Path(processed) / 'main_data.pkl')
     hits = pd.read_pickle(Path(interim) / 'hits.pkl')
     selections = pd.read_pickle(Path(processed) / 'main_selection.pkl')

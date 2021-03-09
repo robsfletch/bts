@@ -28,6 +28,7 @@ def main(data_file, model_file, selection_file):
     data['EstProb'] = probs[:, 1]
     # probs = fitted_model.predict(X)
     # data['EstProb'] = probs
+    # data['EstProb'] = np.random.randint(1, 10000, data.shape[0])
     data = data.set_index(['GAME_ID', 'BAT_ID'])
 
     selection = data.groupby('Date')['EstProb'].nlargest(2).to_frame()

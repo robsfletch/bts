@@ -32,6 +32,10 @@ def main(interim):
     panel.loc[panel.home == True, 'PIT_ID'] = \
         panel['VisitorStartingPitcherID']
 
+    panel['TEAM_PIT_ID'] = panel['VisitorStartingPitcherID']
+    panel.loc[panel.home == True, 'TEAM_PIT_ID'] = \
+        panel['HomeStartingPitcherID']
+
     panel.to_pickle(Path(interim) / 'panel.pkl')
 
 if __name__ == '__main__':

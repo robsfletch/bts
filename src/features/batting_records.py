@@ -44,11 +44,14 @@ def main(interim):
         'RBI', 'BB', 'IW', 'SO', 'HBP', 'SH', 'SF'
         ]
 
+
+
     hand = {'R': 1, 'L': 0}
     batting_record['BAT_HAND'] = batting_record['BAT_HAND'].map(hand)
+    batting_record['BBPG'] = batting_record['BB'] / batting_record['G']
+    batting_record['ABPG'] = batting_record['AB'] / batting_record['G']
     batting_record['HPG'] = batting_record['H'] / batting_record['G']
     batting_record.to_pickle(Path(interim) / 'batting_records.pkl')
-
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
