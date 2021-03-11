@@ -22,6 +22,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer, SimpleImputer
+from sklearn.decomposition import PCA
 
 @click.command()
 @click.argument('processed', type=click.Path(exists=True))
@@ -34,7 +35,7 @@ def main(processed, models):
     train = main_data[(main_data.year > 2000) & (main_data.year < 2018)]
     test = main_data[(main_data.year >= 2018)]
 
-    clf = model9()
+    clf = model8()
 
     clf.fit(train, train['Win'].astype('int'))
     print("model predicted score: %.3f" % clf.score(train, train['Win'].astype('int')))
@@ -219,11 +220,13 @@ def model8():
     )
 
     poly = PolynomialFeatures(2, interaction_only=True)
+    # pca = PCA(n_components=10)
     clftype = LogisticRegressionCV(
         cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
     clf = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('poly', poly),
+        # ('pca', pca),
         ('classifier', clftype)
     ])
 
