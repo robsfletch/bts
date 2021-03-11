@@ -21,7 +21,7 @@ def main(interim):
         'LastName': 'first',
         'PIT_HAND_CD': 'first',
         'GAME_ID': 'nunique',
-        'AB_FL': lambda x: (x == 'T').sum(),
+        'AB_FL': 'sum',
         'H_FL': [
             lambda x: (x > 0).sum(), # Hits
             lambda x: (x == 2).sum(), # Doubles
@@ -34,8 +34,8 @@ def main(interim):
             lambda x: (x == 3).sum(), # Strike Outs
             lambda x: (x == 16).sum() # Hit by Pitch
             ],
-        'SH_FL': lambda x: (x == 'T').sum(),
-        'SF_FL': lambda x: (x == 'T').sum(),
+        'SH_FL': 'sum',
+        'SF_FL': 'sum',
         })
 
     pitching_record.columns = [

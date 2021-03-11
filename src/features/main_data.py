@@ -10,6 +10,20 @@ import logging
 def main(interim, processed):
     merged_data = pd.read_pickle(Path(interim) / 'merged_data.pkl')
     main_data = merged_data
+
+    main_data = main_data[~main_data['Win'].isna()]
+
+    main_data = main_data.astype({
+        'home': 'float64',
+        'spot': 'float64',
+        'HPG': 'float64',
+        'HPAB_p': 'float64',
+        'factor': 'float64',
+        'year': 'float64',
+        'BAT_HAND': 'float64',
+        'PIT_HAND': 'float64',
+    })
+
     main_data.to_pickle(Path(processed) / 'main_data.pkl')
 
 
