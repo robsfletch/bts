@@ -8,7 +8,7 @@ import logging
 @click.argument('interim', type=click.Path(exists=True))
 def main(interim):
     panel = pd.read_pickle(Path(interim) / 'panel.pkl')
-    hits = pd.read_pickle(Path(interim) / 'hits.pkl')
+    hits = pd.read_pickle(Path(interim) / 'batting_games.pkl')
     batting_records = pd.read_pickle(Path(interim) / 'batting_records.pkl')
     pitching_records = pd.read_pickle(Path(interim) / 'pitching_records.pkl')
     park_records = pd.read_pickle(Path(interim) / 'park_records.pkl')

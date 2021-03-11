@@ -72,7 +72,7 @@ class EventsProcessor(DataProcessor):
         save_file = Path(output_filepath) / 'events.pkl'
         self.data.to_pickle(save_file)
 
-        clean_hits = Path(output_filepath) / 'hits.pkl'
+        clean_hits = Path(output_filepath) / 'batting_games.pkl'
         self.hits.to_pickle(clean_hits)
 
 
