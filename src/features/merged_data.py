@@ -22,19 +22,19 @@ def main(interim):
     )
     merged = merged.rename(columns={'b_Win':'Win'})
 
-    # ## PITCHING HITS
-    # merged = merged.merge(
-    #     pitching_games[['avg_game_score']].add_prefix('p_'),
-    #     on=['GAME_ID', 'PIT_ID'],
-    #     how='left',
-    # )
-    #
-    # merged = merged.merge(
-    #     pitching_games[['avg_game_score']].add_prefix('p_team_'),
-    #     left_on=['GAME_ID', 'TEAM_PIT_ID'],
-    #     right_on=['GAME_ID', 'PIT_ID'],
-    #     how='left',
-    # )
+    ## PITCHING HITS
+    merged = merged.merge(
+        pitching_games[['avg_game_score']].add_prefix('p_'),
+        on=['GAME_ID', 'PIT_ID'],
+        how='left',
+    )
+
+    merged = merged.merge(
+        pitching_games[['avg_game_score']].add_prefix('p_team_'),
+        left_on=['GAME_ID', 'TEAM_PIT_ID'],
+        right_on=['GAME_ID', 'PIT_ID'],
+        how='left',
+    )
 
     # Last season year
     merged['last_year'] = merged['year'] - 1
@@ -57,12 +57,12 @@ def main(interim):
     )
     merged = merged.rename(columns={'p_PIT_HAND':'PIT_HAND'})
 
-    # merged = merged.merge(
-    #     pitching_records[['G', 'HPPA']].add_prefix('p_team_'),
-    #     left_on = ['TEAM_PIT_ID', 'last_year'],
-    #     right_on=['PIT_ID', 'year'],
-    #     how='left',
-    # )
+    merged = merged.merge(
+        pitching_records[['G', 'HPPA']].add_prefix('p_team_'),
+        left_on = ['TEAM_PIT_ID', 'last_year'],
+        right_on=['PIT_ID', 'year'],
+        how='left',
+    )
 
     ## PARK RECORDS
     merged = merged.merge(

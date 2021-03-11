@@ -16,6 +16,13 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import SGDClassifier
 
+from sklearn.preprocessing import (PolynomialFeatures, OneHotEncoder)
+from sklearn.compose import ColumnTransformer
+
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer, SimpleImputer
+from sklearn.decomposition import PCA
+
 import pickle
 import click
 import modelsetup
@@ -26,24 +33,27 @@ import modelsetup
 def main(processed, models):
     main_data = pd.read_pickle(Path(processed) / 'main_data.pkl')
 
-    main_data = main_data.dropna()
     main_data = main_data[(main_data.b_G > 50)]
 
     train = main_data[(main_data.year < 2018) & (main_data.year >= 2010)]
 
-    x_train, y_train = modelsetup.gen_model_data(train)
+    x_vars = [
+        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND'
+    ]
+    preprocessor =  ColumnTransformer(
+        [('spot', 'passthrough', x_vars)],
+        remainder='drop'
+    )
 
-    # fitted_model = LogisticRegression(penalty='l1', solver='liblinear')
-    # fitted_model = LassoCV(cv=5, random_state=0)
-    # fitted_model = LogisticRegressionCV(cv=10, random_state=0, max_iter=1000)
-    fitted_model = make_pipeline(StandardScaler(), LogisticRegressionCV(cv=20, random_state=0, max_iter=10000))
-    # fitted_model = make_pipeline(StandardScaler(), RidgeCV())
-    # fitted_model = svm.SVC(cache_size=8000, probability=True)
-    # fitted_model = make_pipeline(StandardScaler(), svm.SVC(gamma='auto', cache_size=8000, probability=True))
-    # fitted_model = SGDClassifier(loss='log')
-    # fitted_model = make_pipeline(StandardScaler(), SGDClassifier(loss='log'))
-    # fitted_model = make_pipeline(StandardScaler(), MLPRegressor(random_state=0, max_iter=10000))
-    fitted_model.fit(x_train, y_train.astype('int'))
+    fitted_model = make_pipeline(
+        preprocessor,
+        IterativeImputer(),
+        PolynomialFeatures(2, interaction_only=True),
+        StandardScaler(),
+        LogisticRegressionCV(cv=20, random_state=0, max_iter=10000)
+    )
+    fitted_model.fit(train, train['Win'].astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
     with open(model_file, 'wb') as fp:

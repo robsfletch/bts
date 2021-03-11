@@ -19,15 +19,15 @@ def main(data_file, model_file, selection_file):
 
     data = pd.read_pickle(data_file)
 
-    data = data.dropna()
+    x_vars = [
+        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND'
+    ]
+    data = data.dropna(subset=x_vars)
     data = data[data.b_G > 50]
 
-    X, Y = modelsetup.gen_model_data(data)
-
-    probs = fitted_model.predict_proba(X)
+    probs = fitted_model.predict_proba(data)
     data['EstProb'] = probs[:, 1]
-    # probs = fitted_model.predict(X)
-    # data['EstProb'] = probs
     data = data.set_index(['GAME_ID', 'BAT_ID'])
 
     selection = data.groupby('Date')['EstProb'].nlargest(2).to_frame()
