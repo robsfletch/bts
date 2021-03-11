@@ -20,13 +20,20 @@ def read_data(input_filepath):
     header_file = Path(input_filepath) / 'game_log_header.csv'
 
     fields = pd.read_csv(header_file)
+    header = fields['Header'].to_numpy()
+
+    types = pd.Series(fields.Type.values,index=fields.Header).to_dict()
+
 
     li = []
     for filename in all_files:
-        df = pd.read_csv(filename, header=None, names=fields.columns)
+        df = pd.read_csv(filename, header=None, names=header, dtype=types,
+                         low_memory=False)
+        df = df.drop(columns=df.filter(regex='.*Name$').columns)
         li.append(df)
 
     df = pd.concat(li, axis=0, ignore_index=True)
+
     return df
 
 def process_data(df, stable=True):
