@@ -25,13 +25,20 @@ def main(interim):
         panel['spot'].str.split(pat='Batting', expand=True)
     panel['spot'] = panel['spot'].str.slice(stop=1).astype(int)
 
-    d = {'Home': True, 'Visitor': False}
-    panel['home'] = panel['home'].map(d)
+    d = {'Home': 1, 'Visitor': 0}
+    panel['home'] = panel['home'].map(d).astype('Int8')
 
     panel['PIT_ID'] = panel['HomeStartingPitcherID']
     panel.loc[panel.home == True, 'PIT_ID'] = \
         panel['VisitorStartingPitcherID']
 
+    panel['TEAM_PIT_ID'] = panel['VisitorStartingPitcherID']
+    panel.loc[panel.home == True, 'TEAM_PIT_ID'] = \
+        panel['HomeStartingPitcherID']
+
+    panel['spot'] = panel['spot'].astype('Int8')
+
+    panel = panel[panel.year >= 1920]
     panel.to_pickle(Path(interim) / 'panel.pkl')
 
 if __name__ == '__main__':
