@@ -7,7 +7,6 @@ import numpy as np
 
 import pickle
 import click
-import modelsetup
 
 @click.command()
 @click.argument('data_file', type=click.Path(exists=True))
@@ -19,12 +18,9 @@ def main(data_file, model_file, selection_file):
 
     data = pd.read_pickle(data_file)
 
-    data = data.dropna()
     data = data[data.b_G > 50]
 
-    X, Y = modelsetup.gen_model_data(data)
-
-    probs = fitted_model.predict_proba(X)
+    probs = fitted_model.predict_proba(data)
     data['EstProb'] = probs[:, 1]
     # probs = fitted_model.predict(X)
     # data['EstProb'] = probs

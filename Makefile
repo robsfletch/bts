@@ -115,10 +115,10 @@ prediction:
 $(selection_data): selection_data.py $(selection) $(main_data) $(batting_games)
 	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
 
-$(selection): predict_model.py $(main_data) $(logistic) modelsetup.py
+$(selection): predict_model.py $(main_data) $(logistic)
 	$(PYTHON_INTERPRETER) $< $(main_data) $(logistic) $(selection)
 
-$(logistic): train_model.py $(main_data) modelsetup.py
+$(logistic): train_model.py $(main_data)
 	$(PYTHON_INTERPRETER) $< $(processed_data) models
 
 $(main_data): main_data.py $(merged_data)
