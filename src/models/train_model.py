@@ -27,7 +27,7 @@ def main(processed, models):
     main_data = pd.read_pickle(Path(processed) / 'main_data.pkl')
 
     main_data = main_data.dropna()
-    main_data = main_data[(main_data.G > 50)]
+    main_data = main_data[(main_data.b_G > 50)]
 
     train = main_data[(main_data.year < 2018) & (main_data.year >= 2010)]
 

@@ -20,25 +20,25 @@ def model1(df):
 
 def model2(df):
 
-    X = df[['spot', 'home', 'HPG']]
+    X = df[['spot', 'home', 'b_HPG']]
     Y = df['Win']
 
     return X, Y
 
 def model3(df):
-    X = df[['spot', 'home', 'HPG', 'HPAB_p']]
+    X = df[['spot', 'home', 'b_HPG', 'p_HPAB']]
     Y = df['Win']
 
     return X, Y
 
 def model4(df):
-    X = df[['spot', 'home', 'HPG', 'HPAB_p', 'factor']]
+    X = df[['spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor']]
     Y = df['Win']
 
     return X, Y
 
 def model5(df):
-    X = df[['spot', 'home', 'HPG', 'HPAB_p', 'factor']]
+    X = df[['spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor']]
 
     poly = PolynomialFeatures(2, interaction_only=True)
     X = poly.fit_transform(X)
@@ -48,7 +48,7 @@ def model5(df):
     return X, Y
 
 def model6(df):
-    X = df[['spot', 'home', 'HPG', 'HPAB_p', 'factor']]
+    X = df[['spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor']]
 
     poly = PolynomialFeatures(2)
     X = poly.fit_transform(X)
@@ -58,7 +58,7 @@ def model6(df):
     return X, Y
 
 def model7(df):
-    X = df[['spot', 'home', 'HPG', 'HPAB_p', 'factor', 'year', 'BAT_HAND', 'PIT_HAND']]
+    X = df[['spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year', 'BAT_HAND', 'PIT_HAND']]
 
     poly = PolynomialFeatures(2, interaction_only=True)
     X = poly.fit_transform(X)
@@ -69,7 +69,7 @@ def model7(df):
 
 
     # poly = PolynomialFeatures(2, interaction_only=True)
-    # X = df[['spot', 'home', 'HPG']]  # , 'HPG' , 'avg_win', 'pit_avg_win'
+    # X = df[['spot', 'home', 'b_HPG']]  # , 'b_HPG' , 'avg_win', 'pit_avg_win'
 
     # enc = OneHotEncoder(dtype=np.int, drop='first', sparse=True)
     # X = pd.DataFrame(

@@ -16,9 +16,9 @@ def main(interim, processed):
     main_data = main_data.astype({
         'home': 'float64',
         'spot': 'float64',
-        'HPG': 'float64',
-        'HPAB_p': 'float64',
-        'factor': 'float64',
+        'b_HPG': 'float64',
+        'p_HPAB': 'float64',
+        'park_factor': 'float64',
         'year': 'float64',
         'BAT_HAND': 'float64',
         'PIT_HAND': 'float64',

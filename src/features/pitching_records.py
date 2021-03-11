@@ -36,11 +36,11 @@ def main(interim):
     })
 
     record = record.rename(columns={
-        'PIT_HAND_CD':'PIT_HAND', 'GAME_ID': 'G_p', 'AB_FL':'AB',
+        'PIT_HAND_CD':'PIT_HAND', 'GAME_ID': 'G', 'AB_FL':'AB',
         'SH_FL':'SH', 'SF_FL':'SF', 'PA_NEW_FL': 'PA'
     })
 
-    record['G_p']= record['G_p'].astype('Int16')
+    record['G']= record['G'].astype('Int16')
     record['AB']= record['AB'].astype('Int16')
     record['H']= record['H'].astype('Int16')
     record['2B']= record['2B'].astype('Int8')
@@ -58,7 +58,7 @@ def main(interim):
     record['PIT_HAND'] = record['PIT_HAND'].map(hand)
 
     record['HPPA'] = record['H'] / record['PA']
-    record['HPAB_p'] = record['H'] / record['AB']
+    record['HPAB'] = record['H'] / record['AB']
 
     record.to_pickle(Path(interim) / 'pitching_records.pkl')
 
