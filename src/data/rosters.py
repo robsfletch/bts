@@ -26,7 +26,7 @@ def read_data(input_filepath):
 
     df = pd.concat(li, axis=0, ignore_index=True)
     df.columns = [
-        'PLAYER_ID', 'LastName', 'FirstName', 'Hand', 'Hand2',
+        'PLAYER_ID', 'LastName', 'FirstName', 'BattingHand', 'ThrowingHand',
         'TEAM', 'Pos', 'year'
     ]
 

@@ -29,14 +29,14 @@ def main(processed, models):
     main_data = pd.read_pickle(Path(processed) / 'main_data.pkl')
 
     main_data = main_data.dropna()
-    main_data = main_data[main_data.G > 50]
+    main_data = main_data[main_data.b_G > 50]
 
-    train = main_data[(main_data.year < 2018)]
+    train = main_data[(main_data.year > 1980) & (main_data.year < 2015)]
     x_train, y_train = modelsetup.gen_model_data(train)
 
     # fitted_model = LogisticRegression(penalty='l1', solver='liblinear')
     # fitted_model = LogisticRegressionCV(cv=20, random_state=0, max_iter=1000)
-    fitted_model = make_pipeline(StandardScaler(), LogisticRegressionCV(cv=20, random_state=0, max_iter=10000))
+    fitted_model = make_pipeline(StandardScaler(), LogisticRegressionCV(cv=5, random_state=0, max_iter=10000))
     # fitted_model = make_pipeline(StandardScaler(), RidgeCV())
     # fitted_model = svm.SVC(cache_size=8000, probability=True)
     # fitted_model = make_pipeline(StandardScaler(), svm.SVC(gamma='auto', cache_size=8000, probability=True))
@@ -44,7 +44,8 @@ def main(processed, models):
     # fitted_model = make_pipeline(StandardScaler(), SGDClassifier(loss='log'))
     # fitted_model = make_pipeline(StandardScaler(), MLPRegressor(random_state=0, max_iter=10000))
     # fitted_model = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1)
-    fitted_model.fit(x_train, y_train)
+
+    fitted_model.fit(x_train, y_train.astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
     with open(model_file, 'wb') as fp:

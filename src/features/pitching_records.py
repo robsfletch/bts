@@ -16,37 +16,49 @@ def main(interim):
     events = events.merge(directory, left_on='PIT_ID',
                           right_on='PLAYER_ID', how='left')
 
-    pitching_record = events.groupby(['PIT_ID', 'year']).agg({
+    record = events.groupby(['PIT_ID', 'year']).agg({
         'FirstName': 'first',
         'LastName': 'first',
         'PIT_HAND_CD': 'first',
         'GAME_ID': 'nunique',
-        'AB_FL': lambda x: (x == 'T').sum(),
-        'H_FL': [
-            lambda x: (x > 0).sum(), # Hits
-            lambda x: (x == 2).sum(), # Doubles
-            lambda x: (x == 3).sum(), # Triples
-            lambda x: (x == 4).sum() # Home Runs
-            ],
-        'EVENT_CD': [
-            lambda x: ((x == 14) | (x == 15)).sum(), # Walks
-            lambda x: (x == 15).sum(), # Intentional Walks
-            lambda x: (x == 3).sum(), # Strike Outs
-            lambda x: (x == 16).sum() # Hit by Pitch
-            ],
-        'SH_FL': lambda x: (x == 'T').sum(),
-        'SF_FL': lambda x: (x == 'T').sum(),
-        })
+        'AB_FL': 'sum',
+        'H': 'sum',
+        '2B': 'sum',
+        '3B': 'sum',
+        'HR': 'sum',
+        'BB': 'sum',
+        'IW': 'sum',
+        'SO': 'sum',
+        'HBP': 'sum',
+        'SH_FL': 'sum',
+        'SF_FL': 'sum',
+        'PA_NEW_FL': 'sum',
+    })
 
-    pitching_record.columns = [
-        'FirstName_p', 'LastName_p', 'PIT_HAND', 'G_p', 'AB_p', 'H_p', '2B_p', '3B_p', 'HR_p',
-        'BB_p', 'IW_p', 'SO_p', 'HBP_p', 'SH_p', 'SF_p'
-        ]
+    record = record.rename(columns={
+        'PIT_HAND_CD':'PIT_HAND', 'GAME_ID': 'G', 'AB_FL':'AB',
+        'SH_FL':'SH', 'SF_FL':'SF', 'PA_NEW_FL': 'PA'
+    })
+
+    record['G']= record['G'].astype('Int16')
+    record['AB']= record['AB'].astype('Int16')
+    record['H']= record['H'].astype('Int16')
+    record['2B']= record['2B'].astype('Int8')
+    record['3B']= record['3B'].astype('Int8')
+    record['HR']= record['HR'].astype('Int8')
+    record['BB']= record['BB'].astype('Int16')
+    record['IW']= record['IW'].astype('Int8')
+    record['SO']= record['SO'].astype('Int16')
+    record['HBP']= record['HBP'].astype('Int8')
+    record['SH']= record['SH'].astype('Int8')
+    record['SF']= record['SF'].astype('Int8')
+    record['PA']= record['PA'].astype('Int16')
 
     hand = {'R': 1, 'L': 0}
-    pitching_record['PIT_HAND'] = pitching_record['PIT_HAND'].map(hand)
-    pitching_record['HPAB_p'] = pitching_record['H_p'] / pitching_record['AB_p']
-    pitching_record.to_pickle(Path(interim) / 'pitching_records.pkl')
+    record['PIT_HAND'] = record['PIT_HAND'].map(hand)
+
+    record['HPPA'] = record['H'] / record['PA']
+    record.to_pickle(Path(interim) / 'pitching_records.pkl')
 
 
 if __name__ == '__main__':

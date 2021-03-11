@@ -20,7 +20,7 @@ def main(data_file, model_file, selection_file):
     data = pd.read_pickle(data_file)
 
     data = data.dropna()
-    data = data[data.G > 50]
+    data = data[data.b_G > 50]
 
     X, Y = modelsetup.gen_model_data(data)
 

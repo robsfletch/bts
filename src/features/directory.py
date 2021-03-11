@@ -9,9 +9,10 @@ def main(interim):
     clean_rosters = Path(interim) / 'rosters.pkl'
     rosters = pd.read_pickle(clean_rosters)
 
-    directory = rosters[['PLAYER_ID', 'FirstName', 'LastName']]
+    directory = rosters[['PLAYER_ID', 'FirstName', 'LastName', 'BattingHand']]
     directory = directory.groupby(['PLAYER_ID']).agg('first')
 
+    directory = directory[directory.index != '\x1a']
     directory .to_pickle(Path(interim) / 'directory.pkl')
 
 if __name__ == '__main__':
