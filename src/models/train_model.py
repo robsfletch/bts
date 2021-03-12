@@ -39,7 +39,8 @@ def main(processed, models):
 
     x_vars = [
         'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND'
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_team_HPAB',
+        'p_avg_game_score', 'p_team_avg_game_score'
     ]
     preprocessor =  ColumnTransformer(
         [('spot', 'passthrough', x_vars)],

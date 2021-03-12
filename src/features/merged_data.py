@@ -58,7 +58,7 @@ def main(interim):
     merged = merged.rename(columns={'p_PIT_HAND':'PIT_HAND'})
 
     merged = merged.merge(
-        pitching_records[['G', 'HPPA']].add_prefix('p_team_'),
+        pitching_records[['G', 'HPPA', 'HPAB']].add_prefix('p_team_'),
         left_on = ['TEAM_PIT_ID', 'last_year'],
         right_on=['PIT_ID', 'year'],
         how='left',
