@@ -13,7 +13,7 @@ import click
 @click.argument('processed', type=click.Path(exists=True))
 def main(interim, processed):
     main_data = pd.read_pickle(Path(processed) / 'main_data.pkl')
-    hits = pd.read_pickle(Path(interim) / 'hits.pkl')
+    hits = pd.read_pickle(Path(interim) / 'batting_games.pkl')
     selections = pd.read_pickle(Path(processed) / 'main_selection.pkl')
 
     # selection_data = selections.merge(hits, on =['GAME_ID', 'BAT_ID'])

@@ -14,13 +14,18 @@ def main(interim, processed):
     main_data = main_data[~main_data['Win'].isna()]
 
     main_data = main_data.astype({
+        'home': 'float64',
+        'spot': 'float64',
         'b_HPG': 'float64',
-        'p_HPPA': 'float64',
+        'p_HPAB': 'float64',
         'park_factor': 'float64',
-        'b_avg_win':'float64',
-        'p_team_HPPA':'float64',
-        'p_avg_game_score':'float64',
-        'p_team_avg_game_score':'float64',
+        'year': 'float64',
+        'BAT_HAND': 'float64',
+        'PIT_HAND': 'float64',
+        'b_avg_win': 'float64',
+        'p_team_HPAB': 'float64',
+        'p_avg_game_score': 'float64',
+        'p_team_avg_game_score': 'float64',
     })
 
     main_data.to_pickle(Path(processed) / 'main_data.pkl')

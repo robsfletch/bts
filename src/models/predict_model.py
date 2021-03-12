@@ -18,13 +18,16 @@ def main(data_file, model_file, selection_file):
 
     data = pd.read_pickle(data_file)
 
+    x_vars = [
+        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_team_HPAB',
+        'p_avg_game_score', 'p_team_avg_game_score'
+    ]
+    data = data.dropna(subset=x_vars)
     data = data[data.b_G > 50]
 
     probs = fitted_model.predict_proba(data)
     data['EstProb'] = probs[:, 1]
-    # probs = fitted_model.predict(X)
-    # data['EstProb'] = probs
-    # data['EstProb'] = np.random.randint(1, 10000, data.shape[0])
     data = data.set_index(['GAME_ID', 'BAT_ID'])
 
     selection = data.groupby('Date')['EstProb'].nlargest(2).to_frame()

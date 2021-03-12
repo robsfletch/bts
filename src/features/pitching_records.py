@@ -58,6 +58,8 @@ def main(interim):
     record['PIT_HAND'] = record['PIT_HAND'].map(hand)
 
     record['HPPA'] = record['H'] / record['PA']
+    record['HPAB'] = record['H'] / record['AB']
+
     record.to_pickle(Path(interim) / 'pitching_records.pkl')
 
 

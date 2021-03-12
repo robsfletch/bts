@@ -50,7 +50,7 @@ def main(interim):
 
     ## PITCHING SEASON RECORDS
     merged = merged.merge(
-        pitching_records[['PIT_HAND', 'G', 'HPPA']].add_prefix('p_'),
+        pitching_records[['PIT_HAND', 'G', 'HPPA', 'HPAB']].add_prefix('p_'),
         left_on=['PIT_ID', 'last_year'],
         right_on=['PIT_ID', 'year'],
         how='left'
@@ -58,7 +58,7 @@ def main(interim):
     merged = merged.rename(columns={'p_PIT_HAND':'PIT_HAND'})
 
     merged = merged.merge(
-        pitching_records[['G', 'HPPA']].add_prefix('p_team_'),
+        pitching_records[['G', 'HPPA', 'HPAB']].add_prefix('p_team_'),
         left_on = ['TEAM_PIT_ID', 'last_year'],
         right_on=['PIT_ID', 'year'],
         how='left',

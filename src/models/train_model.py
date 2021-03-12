@@ -11,14 +11,20 @@ from sklearn.linear_model import (LogisticRegression, LassoCV,
 from sklearn import svm
 from sklearn.linear_model import SGDClassifier
 
-from sklearn.preprocessing import (StandardScaler, PolynomialFeatures)
+from sklearn.preprocessing import (
+    PolynomialFeatures, OneHotEncoder, StandardScaler)
+from sklearn.compose import ColumnTransformer
+
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer, SimpleImputer
+from sklearn.decomposition import PCA
 
 import pickle
 import click
 
 from sklearn.metrics import precision_score
 
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import make_pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer, SimpleImputer
@@ -30,207 +36,32 @@ from sklearn.decomposition import PCA
 def main(processed, models):
     main_data = pd.read_pickle(Path(processed) / 'main_data.pkl')
 
-    main_data = main_data[main_data.b_G > 50]
+    main_data = main_data[(main_data.b_G > 50)]
 
-    train = main_data[(main_data.year > 2000) & (main_data.year < 2018)]
-    test = main_data[(main_data.year >= 2018)]
+    train = main_data[(main_data.year < 2018) & (main_data.year >= 2010)]
 
-    clf = model8()
+    x_vars = [
+        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_team_HPAB',
+        'p_avg_game_score', 'p_team_avg_game_score'
+    ]
+    preprocessor =  ColumnTransformer(
+        [('spot', 'passthrough', x_vars)],
+        remainder='drop'
+    )
 
-    clf.fit(train, train['Win'].astype('int'))
-    print("model predicted score: %.3f" % clf.score(train, train['Win'].astype('int')))
-    print("model score: %.3f" % clf.score(test, test['Win'].astype('int')))
+    fitted_model = make_pipeline(
+        preprocessor,
+        IterativeImputer(),
+        PolynomialFeatures(2, interaction_only=True),
+        StandardScaler(),
+        LogisticRegressionCV(cv=20, random_state=0, max_iter=10000)
+    )
+    fitted_model.fit(train, train['Win'].astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
     with open(model_file, 'wb') as fp:
-        pickle.dump(clf, fp)
-
-def model1():
-    preprocessor =  ColumnTransformer(
-        [('spot', StandardScaler(), ['spot']),
-        ('home', 'passthrough', ['home'])],
-        remainder='drop'
-    )
-
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-def model2():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    preprocessor =  ColumnTransformer(
-        [('spot', StandardScaler(), ['spot']),
-        ('home', 'passthrough', ['home']),
-        ('b_HPG_scale', numeric_transformer, ['b_HPG'])],
-        remainder='drop'
-    )
-
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-
-def model3():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    preprocessor =  ColumnTransformer(
-        [('spot', StandardScaler(), ['spot']),
-        ('home', 'passthrough', ['home']),
-        ('past', numeric_transformer, ['b_HPG', 'p_HPPA'])],
-        remainder='drop'
-    )
-
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-def model4():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    num_vars = ['b_HPG', 'p_HPPA', 'park_factor']
-    preprocessor =  ColumnTransformer(
-        [('spot', StandardScaler(), ['spot']),
-        ('home', 'passthrough', ['home']),
-        ('past', numeric_transformer, num_vars)],
-        remainder='drop'
-    )
-
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-def model5():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    num_vars = ['b_HPG', 'p_HPPA', 'park_factor']
-    preprocessor =  ColumnTransformer(
-        [('spot', StandardScaler(), ['spot']),
-        ('home', 'passthrough', ['home']),
-        ('past', numeric_transformer, num_vars)],
-        remainder='drop'
-    )
-
-    poly = PolynomialFeatures(2, interaction_only=True)
-
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('poly', poly),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-def model6():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    num_vars = ['b_HPG', 'p_HPPA', 'park_factor']
-    preprocessor =  ColumnTransformer(
-        [('spot', StandardScaler(), ['spot']),
-        ('home', 'passthrough', ['home']),
-        ('past', numeric_transformer, num_vars)],
-        remainder='drop'
-    )
-
-    poly = PolynomialFeatures(2)
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('poly', poly),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-def model7():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    sca_vars = ['spot', 'year']
-    num_vars = ['b_HPG', 'p_HPPA', 'park_factor']
-    pass_vars = ['BAT_HAND', 'PIT_HAND']
-    preprocessor =  ColumnTransformer(
-        [('scaled', StandardScaler(), sca_vars),
-        ('home', 'passthrough', ['home']),
-        ('past', numeric_transformer, num_vars)],
-        remainder='drop'
-    )
-
-    poly = PolynomialFeatures(2, interaction_only=True)
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('poly', poly),
-        ('classifier', clftype)
-    ])
-
-    return clf
-
-def model8():
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())])
-
-    sca_vars = ['spot', 'year']
-    num_vars = [
-        'b_HPG', 'p_HPPA', 'park_factor', 'b_avg_win',
-        'p_team_HPPA', 'p_avg_game_score', 'p_team_avg_game_score'
-    ]
-    pass_vars = ['BAT_HAND', 'PIT_HAND']
-    preprocessor =  ColumnTransformer(
-        [('scaled', StandardScaler(), sca_vars),
-        ('home', 'passthrough', ['home']),
-        ('past', numeric_transformer, num_vars)],
-        remainder='drop'
-    )
-
-    poly = PolynomialFeatures(2, interaction_only=True)
-    # pca = PCA(n_components=10)
-    clftype = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, scoring='roc_auc_ovo')
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('poly', poly),
-        # ('pca', pca),
-        ('classifier', clftype)
-    ])
-
-    return clf
+        pickle.dump(fitted_model, fp)
 
 
 if __name__ == '__main__':
