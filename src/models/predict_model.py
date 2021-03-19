@@ -32,10 +32,16 @@ def main(data_file, model_file, selection_file):
     data['EstProb'] = probs[:, 1]
     data = data.set_index(['GAME_ID', 'BAT_ID'])
 
-    selection = data.groupby('Date')['EstProb'].nlargest(2).to_frame()
+    data = data.sort_values(
+        ['EstProb', 'b_pred_HPPA', 'b_avg_win'],
+        ascending=[False, False, False]
+    )
+    selection = data.groupby('Date')['EstProb'].nlargest(2, keep='first').to_frame()
 
     selection = selection.sort_values(
-        by=['Date', 'EstProb', 'GAME_ID'], ascending=[True, False, True])
+        by=['Date', 'EstProb', 'GAME_ID', 'BAT_ID'],
+        ascending=[True, False, True, True]
+    )
 
     selection['pick_order'] = selection.groupby(['Date']).cumcount()+1
     selection.to_pickle(selection_file)

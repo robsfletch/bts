@@ -78,7 +78,7 @@ def model_nn1():
 
     fitted_model = Pipeline([
         ('select', preprocessor),
-        ('impute', IterativeImputer()),
+        ('impute', IterativeImputer(random_state = 0)),
         ('scale', StandardScaler()),
         ('clf', clf),
     ])
@@ -97,26 +97,20 @@ def model_nn1():
     return gs
 
 def get_clf(hidden_layer_dim, meta):
-    # note that meta is a special argument that will be
-    # handed a dict containing input metadata
-    # n_features_in_ = meta["n_features_in_"]
-    # X_shape_ = meta["X_shape_"]
-    # n_classes_ = meta["n_classes_"]
-    #
-    # model = keras.models.Sequential()
+    n_features_in_ = meta["n_features_in_"]
+    X_shape_ = meta["X_shape_"]
+
     # model.add(keras.layers.Dense(n_features_in_, input_shape=X_shape_[1:]))
-    # model.add(keras.layers.Activation("relu"))
-    # model.add(keras.layers.Dense(hidden_layer_dim))
-    # model.add(keras.layers.Activation("relu"))
-    # model.add(keras.layers.Dense(n_classes_))
-    # model.add(keras.layers.Activation("softmax"))
-    # return model
 
     model = Sequential()
-    model.add(Dense(hidden_layer_dim, input_dim=17, activation='relu'))
-    model.add(Dense(hidden_layer_dim, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(Dense(hidden_layer_dim, input_shape=X_shape_[1:]))
+    model.add(Activation('relu'))
+    model.add(Dense(hidden_layer_dim))
+    model.add(Activation('relu'))
+    model.add(Dense(1))
+    model.add(Activation('sigmoid'))
     return model
+
 
 def model_log1():
     x_vars = [
@@ -131,16 +125,18 @@ def model_log1():
         remainder='drop'
     )
 
-    fitted_model = make_pipeline(
-        preprocessor,
-        IterativeImputer(),
-        PolynomialFeatures(2, interaction_only=True),
-        StandardScaler(),
-        LogisticRegressionCV(
-            cv=5, random_state=0, max_iter=10000, n_jobs=-1, penalty='l1',
-            solver='liblinear'
-        )
+    clf = LogisticRegressionCV(
+        cv=5, random_state=0, max_iter=10000, n_jobs=-1, penalty='l1',
+        solver='liblinear'
     )
+
+    fitted_model = Pipeline([
+        ('select', preprocessor),
+        ('impute', IterativeImputer(random_state = 0)),
+        ('poly', PolynomialFeatures(2, interaction_only=True)),
+        ('scale', StandardScaler()),
+        ('clf', clf),
+    ])
 
     return fitted_model
 
@@ -157,26 +153,26 @@ def model_sgd1():
         remainder='drop'
     )
 
-    clf = SGDClassifier(loss='log', penalty='l1')
+    clf = SGDClassifier(loss='log', penalty='l1', random_state=0)
 
     fitted_model = Pipeline([
         ('select', preprocessor),
-        ('impute', IterativeImputer()),
+        ('impute', IterativeImputer(random_state = 0)),
         ('poly', PolynomialFeatures(2, interaction_only=True)),
         ('scale', StandardScaler()),
         ('clf', clf),
     ])
 
-    # params = {
-    #     "clf__alpha": [1e-5, 4e-5, 1e-4, 4e-4]
-    # }
-    #
-    # gs = GridSearchCV(
-    #     fitted_model, params, refit='AUC', cv=3,
-    #     scoring={'AUC': 'roc_auc'}, n_jobs=-1
-    # )
+    params = {
+        "clf__alpha": [.0003, .001, .003, .01]
+    }
 
-    return fitted_model
+    gs = GridSearchCV(
+        fitted_model, params, refit='AUC', cv=5,
+        scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    )
+
+    return gs
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
