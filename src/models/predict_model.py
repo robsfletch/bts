@@ -19,8 +19,8 @@ def main(data_file, model_file, selection_file):
     data = pd.read_pickle(data_file)
 
     x_vars = [
-        'spot', 'home', 'b_pred_HPPA', 'p_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_own_HPAB',
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
         'p_team_HPAB', 'p_team_avg_game_score', 'rating_rating_pre',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'rating_own_rating_pre', 'rating_own_pitcher_rgs'

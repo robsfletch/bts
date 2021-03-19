@@ -13,6 +13,7 @@ def main(interim):
     pitching_team_games = pd.read_pickle(Path(interim) / 'pitching_team_games.pkl')
     batting_records_predict = pd.read_pickle(Path(interim) / 'batting_records_predict.pkl')
     pitching_records = pd.read_pickle(Path(interim) / 'pitching_records.pkl')
+    pitching_records_predict = pd.read_pickle(Path(interim) / 'pitching_records_predict.pkl')
     pitching_team_records = pd.read_pickle(Path(interim) / 'pitching_team_records.pkl')
     ratings538 = pd.read_pickle(Path(interim) / 'ratings538.pkl')
     park_records = pd.read_pickle(Path(interim) / 'park_records.pkl')
@@ -74,16 +75,12 @@ def main(interim):
 
     ## PITCHING SEASON RECORDS
     merged = merged.merge(
-        pitching_records[['PIT_HAND', 'G', 'HPPA', 'HPAB']].add_prefix('p_'),
-        left_on=['PIT_ID', 'last_year'],
-        right_on=['PIT_ID', 'year'],
-        how='left'
+        pitching_records_predict, on=['PIT_ID', 'year'], how='left',
     )
-    merged = merged.rename(columns={'p_PIT_HAND':'PIT_HAND'})
 
     merged = merged.merge(
-        pitching_records[['G', 'HPPA', 'HPAB']].add_prefix('p_own_'),
-        left_on = ['OWN_PIT_ID', 'last_year'],
+        pitching_records_predict.add_prefix('own_'),
+        left_on = ['OWN_PIT_ID', 'year'],
         right_on=['PIT_ID', 'year'],
         how='left',
     )

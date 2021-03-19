@@ -39,9 +39,9 @@ def main(processed, models):
 
     main_data = main_data[(main_data.b_prev_G > 50)]
 
-    train = main_data[(main_data.year < 2010) & (main_data.year >= 1960)]
+    train = main_data[(main_data.year < 2000) & (main_data.year >= 1960)]
 
-    fitted_model = model_nn1()
+    fitted_model = model_sgd1()
     fitted_model.fit(train, train['Win'].astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
@@ -50,8 +50,8 @@ def main(processed, models):
 
 def model_nn1():
     x_vars = [
-        'spot', 'home', 'b_pred_HPPA', 'p_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_own_HPAB',
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
         'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'rating_own_rating_pre', 'rating_own_pitcher_rgs'
@@ -94,7 +94,7 @@ def model_nn1():
     )
 
 
-    return fitted_model
+    return gs
 
 def get_clf(hidden_layer_dim, meta):
     # note that meta is a special argument that will be
@@ -120,8 +120,8 @@ def get_clf(hidden_layer_dim, meta):
 
 def model_log1():
     x_vars = [
-        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_own_HPAB',
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
         'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'rating_own_rating_pre', 'rating_own_pitcher_rgs'
@@ -136,15 +136,18 @@ def model_log1():
         IterativeImputer(),
         PolynomialFeatures(2, interaction_only=True),
         StandardScaler(),
-        LogisticRegressionCV(cv=20, random_state=0, max_iter=10000)
+        LogisticRegressionCV(
+            cv=5, random_state=0, max_iter=10000, n_jobs=-1, penalty='l1',
+            solver='liblinear'
+        )
     )
 
     return fitted_model
 
-def model_sgv1():
+def model_sgd1():
     x_vars = [
-        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_own_HPAB',
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
         'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'rating_own_rating_pre', 'rating_own_pitcher_rgs'
@@ -154,13 +157,24 @@ def model_sgv1():
         remainder='drop'
     )
 
-    fitted_model = make_pipeline(
-        preprocessor,
-        IterativeImputer(),
-        PolynomialFeatures(2, interaction_only=True),
-        StandardScaler(),
-        SGDClassifier(loss='log')
-    )
+    clf = SGDClassifier(loss='log', penalty='l1')
+
+    fitted_model = Pipeline([
+        ('select', preprocessor),
+        ('impute', IterativeImputer()),
+        ('poly', PolynomialFeatures(2, interaction_only=True)),
+        ('scale', StandardScaler()),
+        ('clf', clf),
+    ])
+
+    # params = {
+    #     "clf__alpha": [1e-5, 4e-5, 1e-4, 4e-4]
+    # }
+    #
+    # gs = GridSearchCV(
+    #     fitted_model, params, refit='AUC', cv=3,
+    #     scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    # )
 
     return fitted_model
 

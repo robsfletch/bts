@@ -31,6 +31,7 @@ pitching_team_games = $(interim_data)/pitching_team_games.pkl
 directory = $(interim_data)/directory.pkl
 batting_records = $(interim_data)/batting_records.pkl
 batting_records_predict = $(interim_data)/batting_records_predict.pkl
+pitching_records_predict = $(interim_data)/pitching_records_predict.pkl
 pitching_records = $(interim_data)/pitching_records.pkl
 pitching_team_records = $(interim_data)/pitching_team_records.pkl
 park_records = $(interim_data)/park_records.pkl
@@ -128,7 +129,7 @@ $(logistic): train_model.py $(main_data) modelsetup.py
 $(main_data): main_data.py $(merged_data)
 	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
 
-$(merged_data): merged_data.py $(panel) $(batting_games) $(pitching_games) $(pitching_team_games) $(batting_records_predict) $(pitching_records) $(park_records) $(pitching_team_records) $(ratings538)
+$(merged_data): merged_data.py $(panel) $(batting_games) $(pitching_games) $(pitching_team_games) $(batting_records_predict) $(pitching_records_predict) $(park_records) $(pitching_team_records) $(ratings538)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(panel): panel.py $(game_logs)
@@ -147,6 +148,9 @@ $(park_records): park_records.py $(game_logs)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(pitching_team_records): pitching_team_records.py $(events) $(directory)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(pitching_records_predict): pitching_records_predict.py $(pitching_records)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(pitching_records): pitching_records.py $(events) $(directory)
