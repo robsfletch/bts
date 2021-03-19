@@ -42,11 +42,11 @@ def main(interim):
     pg = pg.sort_values(['PIT_ID', 'Date', 'GAME_ID'])
     pg['cur_avg_game_score'] = pg.groupby('PIT_ID')['game_score'].transform(lambda x: x.rolling(20, 1).mean())
     pg['avg_game_score'] = pg.groupby('PIT_ID')['cur_avg_game_score'].shift(1)
+    pg['avg_game_score'] = pg['avg_game_score'].clip(35, 70)
 
     del pg['Date']
 
     pg.to_pickle(Path(interim) / 'pitching_games.pkl')
-
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

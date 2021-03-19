@@ -33,6 +33,7 @@ def main(interim):
         'HBP': 'sum',
         'SH_FL': 'sum',
         'SF_FL': 'sum',
+        'PA': 'sum',
         })
 
     record = record.rename(columns={
@@ -53,6 +54,7 @@ def main(interim):
     record['HBP']= record['HBP'].astype('Int8')
     record['SH']= record['SH'].astype('Int8')
     record['SF']= record['SF'].astype('Int8')
+    record['PA']= record['PA'].astype('Int16')
 
 
     hand = {'R': 1, 'L': 0}
@@ -60,6 +62,8 @@ def main(interim):
     record['BBPG'] = record['BB'] / record['G']
     record['ABPG'] = record['AB'] / record['G']
     record['HPG'] = record['H'] / record['G']
+    record['HPPA'] = record['H'] / record['PA']
+    record['HPAB'] = record['H'] / record['AB']
 
     record.to_pickle(Path(interim) / 'batting_records.pkl')
 

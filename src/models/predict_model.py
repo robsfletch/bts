@@ -5,9 +5,8 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-import pickle
+import cloudpickle
 import click
-import modelsetup
 
 @click.command()
 @click.argument('data_file', type=click.Path(exists=True))
@@ -15,17 +14,19 @@ import modelsetup
 @click.argument('selection_file')
 def main(data_file, model_file, selection_file):
     with open(model_file, 'rb') as fp:
-        fitted_model = pickle.load(fp)
+        fitted_model = cloudpickle.load(fp)
 
     data = pd.read_pickle(data_file)
 
     x_vars = [
-        'spot', 'home', 'b_HPG', 'p_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_team_HPAB',
-        'p_avg_game_score', 'p_team_avg_game_score'
+        'spot', 'home', 'b_pred_HPPA', 'p_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'p_own_HPAB',
+        'p_team_HPAB', 'p_team_avg_game_score', 'rating_rating_pre',
+        'rating_rating_prob', 'rating_pitcher_rgs',
+        'rating_own_rating_pre', 'rating_own_pitcher_rgs'
     ]
     data = data.dropna(subset=x_vars)
-    data = data[data.b_G > 50]
+    data = data[data.b_prev_G > 50]
 
     probs = fitted_model.predict_proba(data)
     data['EstProb'] = probs[:, 1]

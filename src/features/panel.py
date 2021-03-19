@@ -10,15 +10,15 @@ def main(interim):
     game_logs = pd.read_pickle(Path(interim) / 'game_logs.pkl')
 
     # Select main columns for panel
-    col_list = ['GAME_ID', 'Date', 'year', 'ParkID',
-                '.*Batting.*PlayerID', '.*StartingPitcherID']
+    col_list = ['GAME_ID', 'Date', 'year', 'ParkID', '^HomeTeam$',
+                '^VisitingTeam$', '.*Batting.*PlayerID', '.*StartingPitcherID']
     p = '|'
     col_filter = p.join(col_list)
     game_logs = game_logs.filter(regex=col_filter)
 
     panel = game_logs.melt(
         id_vars=['GAME_ID', 'Date', 'year', 'ParkID', 'VisitorStartingPitcherID',
-            'HomeStartingPitcherID'],
+            'HomeStartingPitcherID', 'HomeTeam', 'VisitingTeam'],
         var_name='spot', value_name='BAT_ID')
 
     panel[['home','spot']] = \
@@ -32,9 +32,17 @@ def main(interim):
     panel.loc[panel.home == True, 'PIT_ID'] = \
         panel['VisitorStartingPitcherID']
 
-    panel['TEAM_PIT_ID'] = panel['VisitorStartingPitcherID']
-    panel.loc[panel.home == True, 'TEAM_PIT_ID'] = \
+    panel['OWN_PIT_ID'] = panel['VisitorStartingPitcherID']
+    panel.loc[panel.home == True, 'OWN_PIT_ID'] = \
         panel['HomeStartingPitcherID']
+
+    panel['PIT_TEAM_ID'] = panel['HomeTeam']
+    panel.loc[panel.home == True, 'PIT_TEAM_ID'] = \
+        panel['VisitingTeam']
+
+    panel['BAT_TEAM_ID'] = panel['VisitingTeam']
+    panel.loc[panel.home == True, 'BAT_TEAM_ID'] = \
+        panel['HomeTeam']
 
     panel['spot'] = panel['spot'].astype('Int8')
 

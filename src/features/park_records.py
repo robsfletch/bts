@@ -29,6 +29,7 @@ def main(interim):
     park_factors = park_factors.sort_values(['ParkID', 'year'])
 
     park_factors['factor'] = park_factors.groupby('ParkID')['factor_year'].transform(lambda x: x.rolling(10, 1).mean())
+    park_factors['factor'] = park_factors['factor'].clip(.8, 1.25)
 
     park_factors.to_pickle(Path(interim) / 'park_records.pkl')
     print('finished')
