@@ -48,7 +48,7 @@ def main(input_filepath, output_filepath):
     df['HBP'] = (df['EVENT_CD'] == 16).astype('Int8')
     df['BAT_HOME_ID'] = df['BAT_HOME_ID'].astype('Int8')
 
-    df['PA'] = df['AB_FL'] + df['BB'] + df['HBP'] + df['SF_FL'].astype('Int8')
+    df['PA'] = (df['AB_FL'] + df['BB'] + df['HBP'] + df['SF_FL'] + df['SH_FL']).astype('Int8')
 
     df.to_pickle(Path(output_filepath) / 'events.pkl')
 

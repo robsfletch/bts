@@ -177,11 +177,17 @@ $(game_logs): game_logs.py
 $(rosters): rosters.py
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
 
+$(people): people.py
+	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
 raw_events:
 	src/data/import_events.sh
 
 raw_538:
 	src/data/import538.sh
+
+raw_lahman:
+	src/data/import_lahman.sh
 #################################################################################
 # Clearing
 #################################################################################

@@ -9,6 +9,11 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import (LogisticRegression, LassoCV,
     LogisticRegressionCV, RidgeCV, SGDClassifier)
+
+from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.ensemble import (GradientBoostingClassifier,
+    HistGradientBoostingClassifier)
+from xgboost import XGBClassifier
 from sklearn.model_selection import GridSearchCV
 
 from sklearn.pipeline import make_pipeline, Pipeline
@@ -41,7 +46,7 @@ def main(processed, models):
 
     train = main_data[(main_data.year < 2000) & (main_data.year >= 1960)]
 
-    fitted_model = model_gbdt1()
+    fitted_model = model_xb1()
     fitted_model.fit(train, train['Win'].astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
@@ -187,21 +192,72 @@ def model_gbdt1():
         remainder='drop'
     )
 
-    clf = GradientBoostingClassifier(
-        n_estimators=100,
-        learning_rate=1.0,
-        max_depth=1,
+    clf = HistGradientBoostingClassifier(
+        loss = 'binary_crossentropy',
+        # max_depth=1,
         random_state=0
     )
 
     fitted_model = Pipeline([
         ('select', preprocessor),
-        ('impute', IterativeImputer(random_state = 0)),
         ('scale', StandardScaler()),
         ('clf', clf),
     ])
 
-    return fitted_model
+    params = {
+        "clf__max_iter": [100, 400, 800],
+        "clf__learning_rate": [.1,.01,.001]
+    }
+
+    gs = GridSearchCV(
+        fitted_model, params, refit='AUC', cv=3,
+        scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    )
+
+
+    return gs
+
+def model_xb1():
+    x_vars = [
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
+        'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
+        'rating_rating_prob', 'rating_pitcher_rgs',
+        'rating_own_rating_pre', 'rating_own_pitcher_rgs'
+    ]
+    preprocessor =  ColumnTransformer(
+        [('spot', 'passthrough', x_vars)],
+        remainder='drop'
+    )
+
+    clf = XGBClassifier(
+        tree_method='hist',
+        verbosity = 0,
+        random_state = 0,
+        eval_metric = 'auc',
+        max_depth = 1,
+        learning_rate = .01,
+    )
+
+    fitted_model = Pipeline([
+        ('select', preprocessor),
+        ('scale', StandardScaler()),
+        ('clf', clf),
+    ])
+
+    params = {
+        # 'clf__max_depth': [4, 6, 8],
+        "clf__n_estimators": [100, 300, 900],
+        # "clf__learning_rate": [.1, .01, .001]
+    }
+
+    gs = GridSearchCV(
+        fitted_model, params, refit='AUC', cv=3,
+        scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    )
+
+
+    return gs
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
