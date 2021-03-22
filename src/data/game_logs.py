@@ -44,6 +44,10 @@ def process_data(df, stable=True):
     df['Date'] = pd.to_datetime(df['Date'], format='%Y%m%d')
     df['year'] = df.Date.dt.year
 
+    df['HomePA']  = (df['HomeAB'] + df['HomeBB'] +
+        df['HomeHBP'] + df['HomeSH'] + df['HomeIBB'])
+    df['VisitorPA']  = (df['VisitorAB'] + df['VisitorBB']
+        + df['VisitorHBP'] + df['VisitorSH'] + df['VisitorIBB'])
 
     return df
 

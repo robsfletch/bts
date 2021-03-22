@@ -16,7 +16,7 @@ def main(interim, processed):
     main_data = main_data.astype({
         'home': 'float64',
         'spot': 'float64',
-        'b_pred_HPG': 'float64',
+        # 'b_pred_HPG': 'float64',
         'b_pred_HPPA': 'float64',
         'p_pred_HPAB': 'float64',
         'p_pred_HPPA': 'float64',

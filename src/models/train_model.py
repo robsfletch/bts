@@ -46,7 +46,7 @@ def main(processed, models):
 
     train = main_data[(main_data.year < 2000) & (main_data.year >= 1960)]
 
-    fitted_model = model_xb1()
+    fitted_model = model_sgd1()
     fitted_model.fit(train, train['Win'].astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
@@ -76,7 +76,7 @@ def model_nn1():
         epochs=40,
         batch_size=32,
         callbacks=[callback],
-        hidden_layer_dim=8,
+        hidden_layer_dim=5,
         verbose=0,
         optimizer__learning_rate=2e-5,
     )
@@ -89,8 +89,8 @@ def model_nn1():
     ])
 
     params = {
-        "clf__hidden_layer_dim": [5, 8, 12],
-        "clf__optimizer__learning_rate": [1e-5, 4e-5, 1e-4, 4e-4]
+        # "clf__hidden_layer_dim": [5, 8, 12],
+        "clf__optimizer__learning_rate": [4e-5, 7e-5, 1e-4, 2e-4, 4e-4]
     }
 
     gs = GridSearchCV(
@@ -158,7 +158,12 @@ def model_sgd1():
         remainder='drop'
     )
 
-    clf = SGDClassifier(loss='log', penalty='l1', random_state=0)
+    clf = SGDClassifier(
+        loss='log',
+        penalty='l1',
+        random_state=0,
+        max_iter = 1000
+    )
 
     fitted_model = Pipeline([
         ('select', preprocessor),
@@ -169,7 +174,8 @@ def model_sgd1():
     ])
 
     params = {
-        "clf__alpha": [.0003, .001, .003, .01]
+        "clf__alpha": [.0003, .001, .003, .005, .008, .01, .02],
+        # "clf__penalty": ["l1", "l2"]
     }
 
     gs = GridSearchCV(
@@ -257,7 +263,7 @@ def model_xb1():
     )
 
 
-    return gs
+    return fitted_model
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
