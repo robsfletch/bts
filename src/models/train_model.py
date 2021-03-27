@@ -13,8 +13,11 @@ from sklearn.linear_model import (LogisticRegression, LassoCV,
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import (GradientBoostingClassifier,
     HistGradientBoostingClassifier)
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, XGBRFClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.experimental import enable_halving_search_cv
+from sklearn.model_selection import HalvingGridSearchCV
+from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedKFold
 
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -73,7 +76,7 @@ def model_nn1():
         loss="binary_crossentropy",
         optimizer='adam',
         metrics=[AUC],
-        epochs=40,
+        epochs=60,
         batch_size=32,
         callbacks=[callback],
         hidden_layer_dim=5,
@@ -89,13 +92,14 @@ def model_nn1():
     ])
 
     params = {
-        # "clf__hidden_layer_dim": [5, 8, 12],
+        "clf__hidden_layer_dim": [5, 8, 12],
         "clf__optimizer__learning_rate": [4e-5, 7e-5, 1e-4, 2e-4, 4e-4]
     }
 
-    gs = GridSearchCV(
-        fitted_model, params, refit='AUC', cv=3,
-        scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    cv = StratifiedKFold(shuffle = True, random_state=1)
+    gs = HalvingGridSearchCV(
+        fitted_model, params, refit='AUC', cv=cv,
+        scoring='roc_auc', n_jobs=-1
     )
 
 
@@ -130,8 +134,9 @@ def model_log1():
         remainder='drop'
     )
 
+    cv = StratifiedKFold(shuffle = True, random_state=1)
     clf = LogisticRegressionCV(
-        cv=5, random_state=0, max_iter=10000, n_jobs=-1, penalty='l1',
+        cv=cv, random_state=1, max_iter=10000, n_jobs=-1, penalty='l1',
         solver='liblinear'
     )
 
@@ -160,7 +165,7 @@ def model_sgd1():
 
     clf = SGDClassifier(
         loss='log',
-        penalty='l1',
+        penalty='elasticnet',
         random_state=0,
         max_iter = 1000
     )
@@ -174,14 +179,19 @@ def model_sgd1():
     ])
 
     params = {
-        "clf__alpha": [.0003, .001, .003, .005, .008, .01, .02],
-        # "clf__penalty": ["l1", "l2"]
+        "clf__alpha": [.0003, .001, .003, .005, .008, .01, .013, .015, .02],
+        "clf__l1_ratio": [0, .25, .5, .75, 1],
+        "poly__interaction_only": [True, False],
+        "poly__degree": [2, 3]
     }
 
-    gs = GridSearchCV(
-        fitted_model, params, refit='AUC', cv=5,
-        scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    cv = StratifiedKFold(shuffle = True, random_state=1)
+    gs = HalvingGridSearchCV(
+        fitted_model, params, cv=cv, n_jobs=-1, verbose=10,
+        refit='precision', scoring='precision',
     )
+    # 'roc_auc'
+    # scoring={'Precision': 'precision'}
 
     return gs
 
@@ -215,8 +225,9 @@ def model_gbdt1():
         "clf__learning_rate": [.1,.01,.001]
     }
 
+    cv = StratifiedKFold(shuffle = True, random_state=1)
     gs = GridSearchCV(
-        fitted_model, params, refit='AUC', cv=3,
+        fitted_model, params, refit='AUC', cv=cv,
         scoring={'AUC': 'roc_auc'}, n_jobs=-1
     )
 
@@ -243,6 +254,8 @@ def model_xb1():
         eval_metric = 'auc',
         max_depth = 1,
         learning_rate = .01,
+        early_stopping_rounds=5,
+        n_estimators=1000,
     )
 
     fitted_model = Pipeline([
@@ -253,17 +266,58 @@ def model_xb1():
 
     params = {
         # 'clf__max_depth': [4, 6, 8],
-        "clf__n_estimators": [100, 300, 900],
-        # "clf__learning_rate": [.1, .01, .001]
+        # "clf__n_estimators": [100, 300, 900],
+        "clf__learning_rate": [.1, .01, .001]
     }
 
+    cv = StratifiedKFold(shuffle = True, random_state=1)
     gs = GridSearchCV(
-        fitted_model, params, refit='AUC', cv=3,
+        fitted_model, params, refit='AUC', cv=cv,
         scoring={'AUC': 'roc_auc'}, n_jobs=-1
     )
 
 
-    return fitted_model
+    return gs
+
+def model_xbrf1():
+    x_vars = [
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
+        'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
+        'rating_rating_prob', 'rating_pitcher_rgs',
+        'rating_own_rating_pre', 'rating_own_pitcher_rgs'
+    ]
+    preprocessor =  ColumnTransformer(
+        [('spot', 'passthrough', x_vars)],
+        remainder='drop'
+    )
+
+    clf = XGBRFClassifier(
+        verbosity = 0,
+        random_state = 0,
+        n_estimators = 500,
+    )
+
+    fitted_model = Pipeline([
+        ('select', preprocessor),
+        ('scale', StandardScaler()),
+        ('clf', clf),
+    ])
+
+    params = {
+        # 'clf__max_depth': [4, 6, 8],
+        # "clf__n_estimators": [100, 300, 900],
+        "clf__learning_rate": [.1, .01, .001]
+    }
+
+    cv = StratifiedKFold(shuffle = True, random_state=1)
+    gs = GridSearchCV(
+        fitted_model, params, refit='AUC', cv=cv,
+        scoring={'AUC': 'roc_auc'}, n_jobs=-1
+    )
+
+
+    return gs
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
