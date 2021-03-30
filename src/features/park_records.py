@@ -12,7 +12,7 @@ import patsy
 def main(interim):
     game_logs = pd.read_pickle(Path(interim) / 'game_logs.pkl')
 
-    park_factors = fe(game_logs)
+    park_factors = espn(game_logs)
 
     park_factors.to_pickle(Path(interim) / 'park_records.pkl')
     print('finished')

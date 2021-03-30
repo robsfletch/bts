@@ -1,3 +1,7 @@
+"""
+a module to import and pre-process data
+
+"""
 import pandas as pd
 import glob
 from pathlib import Path
@@ -8,6 +12,7 @@ import logging
 @click.argument('input_filepath', type=click.Path(exists=True))
 @click.argument('output_filepath', type=click.Path())
 def main(input_filepath, output_filepath):
+    """Read in and pre-process events data"""
     header_file = Path(input_filepath) / 'fields.csv'
     ev_dir = Path(input_filepath) / 'events'
     all_files = glob.glob(str(ev_dir / "Events*.txt"))
