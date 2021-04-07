@@ -36,23 +36,23 @@ def process_data(df, stable=True):
     """Process raw data into useful files for model."""
     df.LastName = df.LastName.str.replace('.', '', regex=False)
     df.FirstName = df.FirstName.str.replace('.', '', regex=False)
-
-    recode = {
-        'CHA': 'CWS',
-        'NYA': 'NYY',
-        'KCA': 'KC',
-        'NYN': 'NYM',
-        'CHN': 'CHC',
-        'LAN': 'LAD',
-        'ANA': 'LAA',
-        'SLN': 'STL',
-        'TBA': 'TB',
-        'WAS': 'WSH',
-        'SFN': 'SF',
-        'SDN': 'SD',
-        }
-    for old_code, new_code in recode.items():
-        df.loc[df.TEAM == old_code, 'TEAM'] = new_code
+    # 
+    # recode = {
+    #     'CHA': 'CWS',
+    #     'NYA': 'NYY',
+    #     'KCA': 'KC',
+    #     'NYN': 'NYM',
+    #     'CHN': 'CHC',
+    #     'LAN': 'LAD',
+    #     'ANA': 'LAA',
+    #     'SLN': 'STL',
+    #     'TBA': 'TB',
+    #     'WAS': 'WSH',
+    #     'SFN': 'SF',
+    #     'SDN': 'SD',
+    #     }
+    # for old_code, new_code in recode.items():
+    #     df.loc[df.TEAM == old_code, 'TEAM'] = new_code
 
     return df
 

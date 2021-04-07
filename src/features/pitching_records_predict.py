@@ -3,16 +3,34 @@ from pathlib import Path
 import click
 import logging
 
+from src.features import marcel
 
 @click.command()
 @click.argument('interim', type=click.Path(exists=True))
 def main(interim):
     pr = pd.read_pickle(Path(interim) / 'pitching_records.pkl')
+    gl = pd.read_pickle(Path(interim) / 'game_logs.pkl')
+    events = pd.read_pickle(Path(interim) / 'adj_events.pkl')
+    people = pd.read_pickle(Path(interim) / 'people.pkl')
 
-    pr = pr.sort_values(['PIT_ID', 'year'])
-    pr_pred = pr[[
-        'PIT_HAND', 'G', 'HPPA', 'HPAB'
-    ]].groupby('PIT_ID').shift(1)
+    pr_pred = marcel.main_marcel(pr, gl, events, people, 'PIT_ID', 'AdjH', 'AdjPA')
+    pr_pred = pr_pred.rename(columns={
+        'pred_AdjHPAdjPA': 'p_pred_AdjHPAdjPA',
+        'pred_AdjH': 'p_pred_AdjH',
+        'pred_AdjPA': 'p_pred_AdjPA',
+        'prev_G': 'p_prev_G',
+    })
+
+    pr_pred = pr_pred.set_index(['PIT_ID', 'year'])
+
+    pr_pred = pr_pred.loc[:, [
+        'p_prev_G', 'p_pred_AdjHPAdjPA', 'p_pred_AdjH', 'p_pred_AdjPA'
+    ]]
+
+    # pr = pr.sort_values(['PIT_ID', 'year'])
+    # pr_pred = pr[[
+    #     'PIT_HAND', 'G', 'HPPA', 'HPAB'
+    # ]].groupby('PIT_ID').shift(1)
 
     # pr_pred = pr_pred.dropna(subset=['G'])
     #
@@ -32,15 +50,15 @@ def main(interim):
     #
     # del pr_pred['HPAB']
 
-    pr_pred = pr_pred.rename(columns={
-        'G': 'p_prev_G',
-        'HPAB': 'p_pred_HPAB',
-        'HPPA': 'p_pred_HPPA',
-    })
-
-    pr_pred = pr_pred.loc[:, [
-        'PIT_HAND', 'p_prev_G', 'p_pred_HPAB', 'p_pred_HPPA'
-    ]]
+    # pr_pred = pr_pred.rename(columns={
+    #     'G': 'p_prev_G',
+    #     'HPAB': 'p_pred_HPAB',
+    #     'HPPA': 'p_pred_HPPA',
+    # })
+    #
+    # pr_pred = pr_pred.loc[:, [
+    #     'PIT_HAND', 'p_prev_G', 'p_pred_HPAB', 'p_pred_HPPA'
+    # ]]
 
     pd.to_pickle(pr_pred, Path(interim) / 'pitching_records_predict.pkl')
 

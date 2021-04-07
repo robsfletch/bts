@@ -11,8 +11,8 @@ import click
 @click.command()
 @click.argument('data_file', type=click.Path(exists=True))
 @click.argument('model_file', type=click.Path(exists=True))
-@click.argument('prediction_file')
-def main(data_file, model_file, prediction_file):
+@click.argument('selection_file')
+def main(data_file, model_file, selection_file):
     with open(model_file, 'rb') as fp:
         fitted_model = cloudpickle.load(fp)
 
@@ -24,29 +24,25 @@ def main(data_file, model_file, prediction_file):
         'park_h_factor', 'opp_hands',
         'p_team_pred_AdjHPG'
     ]
-    y_var = ['Win']
-    vars = x_vars + y_var
-    # x_vars = [
-    #     'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
-    #     'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
-    #     'p_team_HPAB', 'p_team_avg_game_score', 'rating_rating_pre',
-    #     'rating_rating_prob', 'rating_pitcher_rgs',
-    #     'rating_own_rating_pre', 'rating_own_pitcher_rgs'
-    # ]
-    data = data.dropna(subset=x_vars)
-    data = data.loc[data.b_prev_G > 50]
 
+    # data = data.dropna(subset=x_vars)
+    data = data[data.b_prev_G > 40]
 
     probs = fitted_model.predict_proba(data[x_vars])
     data['EstProb'] = probs[:, 1]
     data = data.set_index(['GAME_ID', 'BAT_ID'])
 
     data = data.sort_values(
-        ['EstProb', 'b_pred_HPPA', 'b_avg_win'],
-        ascending=[False, False, False]
+        ['EstProb', 'b_pred_HPPA'],
+        ascending=[False, False]
     )
 
-    data.to_pickle(prediction_file)
+    data = data.sort_values(
+        by=['EstProb', 'GAME_ID', 'BAT_ID'],
+        ascending=[False, True, True]
+    )
+
+    data.to_pickle(selection_file)
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

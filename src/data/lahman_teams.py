@@ -11,14 +11,20 @@ def main(input_filepath, output_filepath):
     """clean game_logs"""
     people = read_data(input_filepath)
     clean_people = process_data(people)
-    clean_people.to_pickle(Path(output_filepath) / 'people.pkl')
+    clean_people.to_pickle(Path(output_filepath) / 'teams.pkl')
 
 def read_data(input_filepath):
     """Read raw data into DataProcessor."""
-    df = pd.read_csv(Path(input_filepath) / 'People.csv')
+    df = pd.read_csv(Path(input_filepath) / 'Teams.csv')
 
-    df = df.rename(columns={'playerID':'lahmanID'})
-    df = df.rename(columns={'retroID':'PlayerID'})
+    df = df.loc[:, ['yearID', 'teamID', 'franchID', 'teamIDretro', 'teamIDBR']]
+
+    df = df.rename(columns={
+        'yearID': 'year',
+        'teamID': 'teamIDlahman'
+    })
+
+    df = df.loc[df.year >= 1920]
 
     return df
 

@@ -49,23 +49,87 @@ def main(processed, models):
 
     main_data = main_data[(main_data.b_prev_G > 50)]
 
-    train = main_data[(main_data.year < 2000) & (main_data.year >= 1960)]
+    x_vars = [
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
+        'rating_rating_prob', 'rating_pitcher_rgs',
+        'park_h_factor', 'opp_hands',
+        'p_team_pred_AdjHPG'
+    ]
+    y_var = ['Win']
+    vars = x_vars + y_var
 
-    fitted_model = model_nn1()
-    fitted_model.fit(train, train['Win'].astype('int'))
+    train = main_data.loc[
+        (main_data.year < 2000) & (main_data.year >= 1960),
+        vars
+    ]
+
+    fitted_model = model_current1()
+    fitted_model.fit(train[x_vars], train['Win'].astype('int'))
 
     model_file = Path(models) / 'logistic_model.pkl'
     with open(model_file, 'wb') as fp:
         cloudpickle.dump(fitted_model, fp)
 
+def model_current1():
+    x_vars = [
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
+        'rating_rating_prob', 'rating_pitcher_rgs',
+        'park_h_factor', 'opp_hands',
+        'p_team_pred_AdjHPG'
+    ]
+    preprocessor =  ColumnTransformer(
+        [('spot', 'passthrough', x_vars)],
+        remainder='drop'
+    )
+
+    clf = SGDClassifier(
+        loss='log',
+        penalty='elasticnet',
+        l1_ratio=1,
+        random_state=0,
+        max_iter = 1000
+    )
+
+    cv_cal = StratifiedKFold(n_splits=2, shuffle = True, random_state=1)
+    calibrated_clf = CalibratedClassifierCV(base_estimator = clf, cv=cv_cal, method='isotonic')
+
+    fitted_model = Pipeline([
+        ('select', preprocessor),
+        ('impute', IterativeImputer(random_state = 0)),
+        ('poly', PolynomialFeatures(2, interaction_only=True)),
+        ('scale', StandardScaler()),
+        ('clf', calibrated_clf),
+    ])
+
+    params = {
+        "clf__base_estimator__alpha": [.0003, .001, .003, .005, .008, .01],
+        "clf__base_estimator__l1_ratio": [0, .25, .5, .75, 1],
+        # "poly__interaction_only": [True, False],
+        # "poly__degree": [2, 3]
+    }
+
+    cv = StratifiedKFold(shuffle = True, random_state=1)
+    gs = GridSearchCV(
+        fitted_model, params, cv=cv, n_jobs=-1, verbose=10,
+        refit='roc_auc', scoring='roc_auc',
+    )
+
+    return gs
+
+
 def model_nn1():
     x_vars = [
-        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
-        'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
-        'rating_own_rating_pre', 'rating_own_pitcher_rgs'
+        'park_h_factor', 'opp_hands'
     ]
+    # x_vars = [
+    #     'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
+    #     'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
+    #     'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
+    #     'rating_rating_prob', 'rating_pitcher_rgs',
+    #     'rating_own_rating_pre', 'rating_own_pitcher_rgs'
+    # ]
     preprocessor =  ColumnTransformer(
         [('spot', 'passthrough', x_vars)],
         remainder='drop'
@@ -81,9 +145,9 @@ def model_nn1():
         epochs=40,
         batch_size=32,
         callbacks=[callback],
-        hidden_layer_dim=8,
+        hidden_layer_dim=5,
         verbose=0,
-        optimizer__learning_rate=2e-5,
+        optimizer__learning_rate=4e-5,
     )
 
     fitted_model = Pipeline([
@@ -93,19 +157,19 @@ def model_nn1():
         ('clf', clf),
     ])
 
-    params = {
-        "clf__hidden_layer_dim": [5, 8, 12],
-        "clf__optimizer__learning_rate": [1e-5, 4e-5, 1e-4, 4e-4]
-    }
+    # params = {
+    #     "clf__hidden_layer_dim": [5, 8],
+    #     "clf__optimizer__learning_rate": [1e-5, 4e-5, 1e-4, 4e-4]
+    # }
+    #
+    # # cv = StratifiedKFold(n_splits=3, shuffle = True, random_state=1)
+    # gs = GridSearchCV(
+    #     fitted_model, params, refit='AUC', cv=3,
+    #     scoring='roc_auc', n_jobs=-1, verbose=100
+    # )
 
-    cv = StratifiedKFold(n_splits=3, shuffle = True, random_state=1)
-    gs = GridSearchCV(
-        fitted_model, params, refit='AUC', cv=cv,
-        scoring='roc_auc', n_jobs=-1, verbose=100
-    )
 
-
-    return gs
+    return fitted_model
 
 def get_clf(hidden_layer_dim, meta):
     n_features_in_ = meta["n_features_in_"]
@@ -202,12 +266,16 @@ def model_sgd1():
 
 def model_xb1():
     x_vars = [
-        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
-        'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
-        'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre',
+        'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
-        'rating_own_rating_pre', 'rating_own_pitcher_rgs'
+        'park_h_factor', 'opp_hands'
     ]
+    # x_vars = [
+    #    'p_pred_HPAB', 'year',
+    #     'BAT_HAND', 'PIT_HAND', 'b_avg_win', 'own_p_pred_HPAB',
+    #     'p_team_HPG', 'p_team_avg_game_score', 'rating_rating_pre'
+    #     'rating_own_rating_pre', 'rating_own_pitcher_rgs'
+    # ]
     preprocessor =  ColumnTransformer(
         [('spot', 'passthrough', x_vars)],
         remainder='drop'
@@ -245,13 +313,12 @@ def model_xb1():
 
     params = {
         'clf__max_depth': [1, 2, 4],
-        # "clf__n_estimators": [100, 300, 900],
+        # 'clf__subsample': [.7, .8, .9],
         "clf__learning_rate": [.1, .01, .001]
-
     }
 
     cv = StratifiedKFold(shuffle = True, random_state=1)
-    gs = HalvingGridSearchCV(
+    gs = GridSearchCV(
         fitted_model, params, refit='AUC', cv=cv,
         scoring='roc_auc', n_jobs=-1, verbose=20
     )
