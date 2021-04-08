@@ -11,11 +11,15 @@ def main(interim):
 
     bg = events.groupby(['GAME_ID', 'BAT_ID']).agg({
         'H': 'max',
+        'PA': 'sum',
         'BAT_LINEUP_ID': 'first',
         'Date': 'first',
     })
 
-    bg = bg.rename(columns={'H': 'Win'})
+    bg = bg.rename(columns={
+        'H': 'Win',
+        'PA': 'PA_in_G'
+    })
     bg['Win'] = bg['Win'].astype('Int8')
     bg['BAT_LINEUP_ID'] = bg['BAT_LINEUP_ID'].astype('Int8')
 

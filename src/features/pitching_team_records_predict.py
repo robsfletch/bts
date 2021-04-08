@@ -11,13 +11,14 @@ def main(interim):
 
     ptr = ptr.sort_values(['PIT_TEAM_ID', 'year'])
 
-    ptr_pred = ptr[['AdjHPG']]
+    ptr_pred = ptr[['AdjHPG', 'DefEff']]
     ptr_pred = ptr_pred.reset_index()
     ptr_pred['year'] = ptr_pred['year']+1
     ptr_pred = ptr_pred.set_index(['PIT_TEAM_ID', 'year'])
 
     ptr_pred = ptr_pred.rename(columns={
         'AdjHPG': 'p_team_pred_AdjHPG',
+        'DefEff': 'p_team_pred_DefEff',
     })
 
     pd.to_pickle(ptr_pred, Path(interim) / 'pitching_team_records_predict.pkl')

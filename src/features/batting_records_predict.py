@@ -4,18 +4,16 @@ import click
 import logging
 import numpy as np
 
-from src.features import marcel
-
+import marcel
 
 @click.command()
 @click.argument('interim', type=click.Path(exists=True))
 def main(interim):
     br = pd.read_pickle(Path(interim) / 'batting_records.pkl')
-    gl = pd.read_pickle(Path(interim) / 'game_logs.pkl')
     events = pd.read_pickle(Path(interim) / 'adj_events.pkl')
     people = pd.read_pickle(Path(interim) / 'people.pkl')
 
-    br_pred = marcel.main_marcel(br, gl, events, people, 'BAT_ID', 'AdjH', 'AdjPA')
+    br_pred = marcel.main_marcel(br, events, people, 'BAT_ID', 'AdjH', 'AdjPA')
     br_pred = br_pred.rename(columns={
         'pred_AdjHPAdjPA': 'b_pred_AdjHPAdjPA',
         'pred_AdjH': 'b_pred_AdjH',

@@ -2,18 +2,16 @@ import pandas as pd
 from pathlib import Path
 import click
 import logging
-
-from src.features import marcel
+import marcel
 
 @click.command()
 @click.argument('interim', type=click.Path(exists=True))
 def main(interim):
     pr = pd.read_pickle(Path(interim) / 'pitching_records.pkl')
-    gl = pd.read_pickle(Path(interim) / 'game_logs.pkl')
     events = pd.read_pickle(Path(interim) / 'adj_events.pkl')
     people = pd.read_pickle(Path(interim) / 'people.pkl')
 
-    pr_pred = marcel.main_marcel(pr, gl, events, people, 'PIT_ID', 'AdjH', 'AdjPA')
+    pr_pred = marcel.main_marcel(pr, events, people, 'PIT_ID', 'AdjH', 'AdjPA')
     pr_pred = pr_pred.rename(columns={
         'pred_AdjHPAdjPA': 'p_pred_AdjHPAdjPA',
         'pred_AdjH': 'p_pred_AdjH',

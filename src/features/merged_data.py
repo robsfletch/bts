@@ -24,7 +24,7 @@ def main(interim, in_file, out_file):
 
     ## BATING HITS
     merged = panel.merge(
-        bg[['Win', 'avg_win']].add_prefix('b_'),
+        bg[['Win', 'avg_win', 'PA_in_G']].add_prefix('b_'),
         on=['GAME_ID', 'BAT_ID'],
         how='left',
     )
@@ -109,7 +109,7 @@ def main(interim, in_file, out_file):
 
     ## PITCHING TEAM SEASON RECORDS
     merged = merged.merge(
-        ptr_predict[['p_team_pred_AdjHPG']],
+        ptr_predict[['p_team_pred_AdjHPG', 'p_team_pred_DefEff']],
         on=['PIT_TEAM_ID', 'year'],
         how='left'
     )

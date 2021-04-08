@@ -268,7 +268,8 @@ def model_xb1():
     x_vars = [
         'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
-        'park_h_factor', 'opp_hands'
+        'park_h_factor', 'opp_hands',
+        'p_team_pred_AdjHPG'
     ]
     # x_vars = [
     #    'p_pred_HPAB', 'year',

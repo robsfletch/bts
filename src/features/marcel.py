@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 
-def main_marcel(records, gl, events, people, player_id, metric, base):
+def main_marcel(records, events, people, player_id, metric, base):
     records = records.loc[:, [metric, base, 'G']]
     records = fill_gaps(records, player_id)
 

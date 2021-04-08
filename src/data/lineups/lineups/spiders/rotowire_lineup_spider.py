@@ -13,6 +13,7 @@ class RotowireSpider(scrapy.Spider):
 
     def parse(self, response):
         for matchup in response.xpath('//div[(contains(@class,"lineup") and contains(@class,"is-mlb")) and not(contains(@class,"is-tools")) and not(contains(@class, "is-postponed"))]'):
+            game_time = matchup.css('div.lineup__time::text').get()
             away_team = matchup.css('div[class="lineup__team is-visit"]')
             away_team_code = away_team.css('div.lineup__abbr::text').get()
 
@@ -42,6 +43,7 @@ class RotowireSpider(scrapy.Spider):
             home_players = home_lineup.css('li[class="lineup__player"]')
 
             yield {
+                'game_time': game_time,
                 'away_team_name': away_team_name,
                 'away_team_code': away_team_code,
                 'away_pitcher': away_pitcher,

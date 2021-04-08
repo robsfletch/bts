@@ -31,6 +31,7 @@ def main(interim, processed):
         'p_avg_game_score': 'float64',
         'p_own_avg_game_score': 'float64',
         'p_team_pred_AdjHPG': 'float64',
+        'p_team_pred_DefEff': 'float64',
         'p_team_avg_game_score': 'float64',
         'b_team_pred_AdjHPG': 'float64',
     })

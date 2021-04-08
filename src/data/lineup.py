@@ -78,13 +78,28 @@ class LineupProcessor():
                 'away_team_code'
             ] = new_code
 
+        raw_lineup_wide['game_time'] = pd.to_datetime(raw_lineup_wide.game_time)
+        raw_lineup_wide = raw_lineup_wide.sort_values(['home_team_code', 'game_time'])
+        raw_lineup_wide['NumGames'] = raw_lineup_wide.groupby(['home_team_code'])['game_time'].transform('count')
+        raw_lineup_wide['GameOrder'] = raw_lineup_wide.groupby(['home_team_code']).cumcount() + 1
+
+        raw_lineup_wide['DoubleHeader'] = np.where(
+            raw_lineup_wide['NumGames'] >= 2,
+            raw_lineup_wide['GameOrder'],
+            0
+        ).astype('int')
+
+        del raw_lineup_wide['NumGames']
+        del raw_lineup_wide['GameOrder']
+
+
         raw_lineup_wide.drop(
                 columns=['home_team_name', 'away_team_name'], inplace=True)
 
         raw_lineup_wide['id'] = np.arange(len(raw_lineup_wide))
 
         raw_lineup = raw_lineup_wide.melt(
-            id_vars=['id', 'home_team_code', 'away_team_code'],
+            id_vars=['id', 'home_team_code', 'away_team_code', 'game_time', 'DoubleHeader'],
             var_name='lineup_id',
             value_name='Name')
 
@@ -112,7 +127,7 @@ class LineupProcessor():
 
         raw_lineup.loc[
             (raw_lineup['FirstName'] == 'Hyun') &
-            (raw_lineup['LastName'] == 'Jin'),
+            (raw_lineup['LastName'] == 'Jin Ryu'),
             ['FirstName', 'LastName']] = ['Hyun Jin', 'Ryu']
 
         raw_lineup.loc[
@@ -129,6 +144,21 @@ class LineupProcessor():
             (raw_lineup['FirstName'] == 'J') &
             (raw_lineup['LastName'] == 'Montgomery'),
             'FirstName'] = 'Jordan'
+
+        raw_lineup.loc[
+            (raw_lineup['FirstName'] == 'S') &
+            (raw_lineup['LastName'] == 'Strasburg'),
+            'FirstName'] = 'Stephen'
+
+        raw_lineup.loc[
+            (raw_lineup['FirstName'] == 'A') &
+            (raw_lineup['LastName'] == 'Senzatela'),
+            'FirstName'] = 'Antonio'
+
+        raw_lineup.loc[
+            (raw_lineup['FirstName'] == 'E') &
+            (raw_lineup['LastName'] == 'Rodriguez'),
+            'FirstName'] = 'Eduardo'
 
         # set whether players are at home or away, and spot in lineup
         raw_lineup[['home', 'lineup_id']] = \
@@ -170,11 +200,11 @@ class LineupProcessor():
 
         lineup_with_id = lineup_with_id[[
             'PLAYER_ID', 'TEAM', 'lineup_id', 'home',
-            'home_team_code', 'away_team_code'
+            'home_team_code', 'away_team_code', 'game_time', 'DoubleHeader'
         ]]
 
         players_grid = lineup_with_id.pivot(
-            index=['home_team_code', 'away_team_code'],
+            index=['home_team_code', 'away_team_code', 'game_time', 'DoubleHeader'],
             columns=['lineup_id', 'home'],
             values=['PLAYER_ID'])
 
@@ -188,7 +218,7 @@ class LineupProcessor():
         )
 
         clean_lineups = players_grid.stack().reset_index().set_index([
-            'home_team_code', 'away_team_code'
+            'home_team_code', 'away_team_code', 'game_time', 'DoubleHeader'
         ])
         clean_lineups.columns = [
             'home_pitcher', 'away_pitcher', 'spot', 'BAT_ID'
@@ -228,7 +258,8 @@ class LineupProcessor():
         ## Come back and fix this for double headers
         clean_lineups['GAME_ID'] = \
             clean_lineups.index.get_level_values('home_team_code') + \
-            self.__date.replace('-', '') + '0'
+            self.__date.replace('-', '') + \
+            clean_lineups.index.get_level_values('DoubleHeader').astype('int').astype('str')
 
         clean_lineups['year'] = int(self.__year)
         clean_lineups = clean_lineups.reset_index()
