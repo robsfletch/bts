@@ -24,7 +24,7 @@ def main(interim, processed, estonly = 'False'):
 
     if estonly == 'True':
         final_selections = selections1
-        final_selections['pick_order'] = final_selections.groupby(['Date']).cumcount()+1
+        final_selections['pick_order'] = final_selections.groupby(['date']).cumcount()+1
         final_selections = final_selections[
             ['GAME_ID', 'BAT_ID', 'EstProb', 'ExpPoints', 'pick_order']
         ]
@@ -41,18 +41,18 @@ def main(interim, processed, estonly = 'False'):
 
 
 def select_by_prob(predictions):
-    selections = predictions.sort_values(['Date', 'EstProb'], ascending=[True, False])
-    selections['pick_order'] = selections.groupby(['Date']).cumcount() + 1
+    selections = predictions.sort_values(['date', 'EstProb'], ascending=[True, False])
+    selections['pick_order'] = selections.groupby(['date']).cumcount() + 1
     selections = selections[selections.pick_order <= 2]
 
-    selections['Points'] = selections.groupby('Date')['Win'].transform('prod')
-    selections['ExpPoints'] = selections.groupby('Date')['EstProb'].transform('prod')
-    selections = selections.reset_index().set_index(['Date', 'pick_order'])
+    selections['Points'] = selections.groupby('date')['Win'].transform('prod')
+    selections['ExpPoints'] = selections.groupby('date')['EstProb'].transform('prod')
+    selections = selections.reset_index().set_index(['date', 'pick_order'])
 
     return selections
 
 def select_by_teams(predictions):
-    top_by_team = predictions.sort_values(['Date', 'GAME_ID', 'BAT_TEAM_ID', 'EstProb'], ascending=[True, True, True, False])
+    top_by_team = predictions.sort_values(['date', 'GAME_ID', 'BAT_TEAM_ID', 'EstProb'], ascending=[True, True, True, False])
     top_by_team['id'] = top_by_team.groupby(['GAME_ID', 'BAT_TEAM_ID']).ngroup()
     top_by_team['pick_order'] = top_by_team.groupby(['GAME_ID', 'BAT_TEAM_ID']).cumcount() + 1
 
@@ -69,13 +69,13 @@ def select_by_teams(predictions):
 
 
     top_by_team = top_by_team.sort_values(
-        ['Date', 'ExpPoints', 'GAME_ID', 'BAT_TEAM_ID', 'EstProb'],
+        ['date', 'ExpPoints', 'GAME_ID', 'BAT_TEAM_ID', 'EstProb'],
         ascending=[True, False, True, True, False]
     )
-    top_by_team['group_pick_order'] = top_by_team.groupby(['Date']).cumcount() + 1
+    top_by_team['group_pick_order'] = top_by_team.groupby(['date']).cumcount() + 1
 
     selections = top_by_team.loc[top_by_team.group_pick_order <= 2].copy()
-    selections = selections.reset_index().set_index(['Date', 'pick_order'])
+    selections = selections.reset_index().set_index(['date', 'pick_order'])
     del selections['group_pick_order']
     del selections['id']
     del selections['ExpPointsPre']
@@ -87,24 +87,24 @@ def select_by_teams(predictions):
 
 def combine_selections(selections1, selections2):
 
-    temp1 = selections1.groupby('Date')['ExpPoints'].first().to_frame()
-    temp2 = selections2.groupby('Date')['ExpPoints'].first().to_frame()
+    temp1 = selections1.groupby('date')['ExpPoints'].first().to_frame()
+    temp2 = selections2.groupby('date')['ExpPoints'].first().to_frame()
     temp2.columns = ['ExpPoints2']
 
-    compare = pd.merge(temp1, temp2, on=['Date'], how='left')
+    compare = pd.merge(temp1, temp2, on=['date'], how='left')
     compare['ChooseTeam'] = compare['ExpPoints2'] > compare['ExpPoints']
 
-    selections1 = pd.merge(selections1.reset_index(), compare['ChooseTeam'], on=['Date'], how='left')
-    selections2 = pd.merge(selections2.reset_index(), compare['ChooseTeam'], on=['Date'], how='left')
+    selections1 = pd.merge(selections1.reset_index(), compare['ChooseTeam'], on=['date'], how='left')
+    selections2 = pd.merge(selections2.reset_index(), compare['ChooseTeam'], on=['date'], how='left')
 
-    selections1 = selections1.set_index(['Date', 'pick_order'])
-    selections2 = selections2.set_index(['Date', 'pick_order'])
+    selections1 = selections1.set_index(['date', 'pick_order'])
+    selections2 = selections2.set_index(['date', 'pick_order'])
 
     select1 = selections1[selections1.ChooseTeam == False]
     select2 = selections2[selections2.ChooseTeam == True]
     selections = select1.append(select2)
 
-    selections = selections.sort_values(['Date', 'pick_order'])
+    selections = selections.sort_values(['date', 'pick_order'])
     selections = selections[['GAME_ID', 'BAT_ID', 'EstProb', 'ExpPoints', 'ChooseTeam']]
 
     return selections

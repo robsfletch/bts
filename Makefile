@@ -209,7 +209,7 @@ $(park_records): park_records.py $(game_logs)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(game_logs): game_logs.py
-	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+	$(PYTHON_INTERPRETER) $<
 
 $(rosters): rosters.py
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
