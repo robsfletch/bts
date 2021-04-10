@@ -9,7 +9,6 @@ def main_marcel(records, events, people, player_id, metric, base):
 
     merged = merge_data(records, people, player_id)
     merged[metric] = merged[metric].astype('int')
-    merged[base] = merged[base]
     merged['G'] = merged['G'].astype('int')
 
     lr = gen_league(events, metric, base)

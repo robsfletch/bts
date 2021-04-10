@@ -14,6 +14,7 @@ def main(interim):
         'PA': 'sum',
         'BAT_LINEUP_ID': 'first',
         'Date': 'first',
+        'year': 'first'
     })
 
     bg = bg.rename(columns={

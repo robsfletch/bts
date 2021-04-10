@@ -85,7 +85,6 @@ def main(interim, in_file, out_file):
     )
     merged = merged.rename(columns={'bats':'BAT_HAND'})
 
-
     ## PITCHING SEASON RECORDS
     merged = merged.merge(
         pr_predict, on=['PIT_ID', 'year'], how='left',

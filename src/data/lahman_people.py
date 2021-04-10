@@ -36,7 +36,10 @@ def process_data(df, stable=True):
     pit_hand = {'R': 1, 'L': 0, 'S': 0}
     df['throws'] = df['throws'].map(pit_hand)
 
+    df = df.dropna(subset=['PlayerID'])
+
     df = df.set_index('PlayerID')
+
 
     return df
 

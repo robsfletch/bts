@@ -225,7 +225,7 @@ raw_events:
 	src/data/import_events.sh
 
 # .FORCE
-$(raw_ratings538):
+$(raw_ratings538): .FORCE
 	src/data/import538.sh
 
 # switch to downloading whole directory
