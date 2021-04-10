@@ -45,9 +45,9 @@ def process_data(df, stable=True):
     df['year'] = df.Date.dt.year
 
     df['HomePA']  = (df['HomeAB'] + df['HomeBB'] +
-        df['HomeHBP'] + df['HomeSH'] + df['HomeIBB'])
+        df['HomeHBP'] + df['HomeSF'] + df['HomeSH'])
     df['VisitorPA']  = (df['VisitorAB'] + df['VisitorBB']
-        + df['VisitorHBP'] + df['VisitorSH'] + df['VisitorIBB'])
+        + df['VisitorHBP'] + df['VisitorSF'] + df['VisitorSH'])
 
     return df
 

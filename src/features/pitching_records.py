@@ -7,10 +7,10 @@ import logging
 @click.command()
 @click.argument('interim', type=click.Path(exists=True))
 def main(interim):
-    clean_events = Path(interim) / 'events.pkl'
+    clean_adj_events = Path(interim) / 'adj_events.pkl'
     clean_directory = Path(interim) / 'directory.pkl'
 
-    events = pd.read_pickle(clean_events)
+    events = pd.read_pickle(clean_adj_events)
     directory = pd.read_pickle(clean_directory)
 
     events = events.merge(directory, left_on='PIT_ID',
@@ -34,6 +34,8 @@ def main(interim):
         'SF_FL': 'sum',
         'PA_NEW_FL': 'sum',
         'PA': 'sum',
+        'AdjH': 'sum',
+        'AdjPA': 'sum',
     })
 
     record = record.rename(columns={
@@ -61,6 +63,7 @@ def main(interim):
     record['HPPA'] = record['H'] / record['PA']
     record['HPAB'] = record['H'] / record['AB']
     record['HPAB'] = record['HPAB'].clip(.17, .35)
+    record['AdjHPPA'] = record['AdjH'] / record['AdjPA']
 
     record.to_pickle(Path(interim) / 'pitching_records.pkl')
 

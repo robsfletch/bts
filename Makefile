@@ -20,20 +20,30 @@ raw_data = data/raw
 interim_data = data/interim
 processed_data = data/processed
 
+raw_teams = $(raw_data)/Teams.csv
+raw_people = $(raw_data)/People.csv
+raw_ratings538 = $(raw_data)/mlb_elo.csv
+
 game_logs = $(interim_data)/game_logs.pkl
 events = $(interim_data)/events.pkl
+adj_events = $(interim_data)/adj_events.pkl
 rosters = $(interim_data)/rosters.pkl
 ratings538 = $(interim_data)/ratings538.pkl
+people = $(interim_data)/people.pkl
+teams = $(interim_data)/teams.pkl
 
-batting_games = $(interim_data)/batting_games.pkl
-pitching_games = $(interim_data)/pitching_games.pkl
-pitching_team_games = $(interim_data)/pitching_team_games.pkl
+bg = $(interim_data)/batting_games.pkl
+pg = $(interim_data)/pitching_games.pkl
+ptg = $(interim_data)/pitching_team_games.pkl
 directory = $(interim_data)/directory.pkl
-batting_records = $(interim_data)/batting_records.pkl
-batting_records_predict = $(interim_data)/batting_records_predict.pkl
-pitching_records_predict = $(interim_data)/pitching_records_predict.pkl
-pitching_records = $(interim_data)/pitching_records.pkl
-pitching_team_records = $(interim_data)/pitching_team_records.pkl
+br = $(interim_data)/batting_records.pkl
+br_predict = $(interim_data)/batting_records_predict.pkl
+btr = $(interim_data)/batting_team_records.pkl
+btr_predict = $(interim_data)/batting_team_records_predict.pkl
+pr_predict = $(interim_data)/pitching_records_predict.pkl
+pr = $(interim_data)/pitching_records.pkl
+ptr = $(interim_data)/pitching_team_records.pkl
+ptr_predict = $(interim_data)/pitching_team_records_predict.pkl
 park_records = $(interim_data)/park_records.pkl
 
 panel = $(interim_data)/panel.pkl
@@ -43,10 +53,15 @@ main_data = $(processed_data)/main_data.pkl
 main_data_X = $(processed_data)/main_data_X.npy
 main_data_Y = $(processed_data)/main_data_Y.npy
 
+predictions = $(processed_data)/main_predictions.pkl
 selection = $(processed_data)/main_selection.pkl
 selection_data = $(processed_data)/selection_data.pkl
 
 logistic = models/logistic_model.pkl
+
+lineup = $(interim_data)/lineup.pkl
+merged_lineup = $(interim_data)/merged_lineup.pkl
+lineup_selections = $(interim_data)/lineup_selections.pkl
 
 VPATH = src/data:$\
 				src/features:$\
@@ -111,17 +126,25 @@ test_environment:
 	$(PYTHON_INTERPRETER) test_environment.py
 
 
-prediction:
+prediction: $(lineup_selections)
+
+$(lineup_selections): select_from_lineup.py $(merged_lineup) $(logistic)
+	$(PYTHON_INTERPRETER) $< $(merged_lineup) $(logistic) $(lineup_selections)
+
+$(merged_lineup): merged_data.py $(lineup) $(bg) $(pg) $(ptg) \
+	$(br_predict) $(pr_predict) $(park_records) $(ptr_predict) \
+	$(btr_predict) $(ratings538)
+	$(PYTHON_INTERPRETER) $< $(interim_data) $(lineup) $(merged_lineup)
 
 
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
-$(selection_data): selection_data.py $(selection) $(main_data) $(batting_games)
+$(selection_data): selection_data.py $(predictions) $(main_data)
 	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
 
-$(selection): predict_model.py $(main_data) $(logistic)
-	$(PYTHON_INTERPRETER) $< $(main_data) $(logistic) $(selection)
+$(predictions): predict_model.py $(main_data) $(logistic)
+	$(PYTHON_INTERPRETER) $< $(main_data) $(logistic) $(predictions)
 
 $(logistic): train_model.py $(main_data) modelsetup.py
 	$(PYTHON_INTERPRETER) $< $(processed_data) models
@@ -129,47 +152,61 @@ $(logistic): train_model.py $(main_data) modelsetup.py
 $(main_data): main_data.py $(merged_data)
 	$(PYTHON_INTERPRETER) $< $(interim_data) $(processed_data)
 
-$(merged_data): merged_data.py $(panel) $(batting_games) $(pitching_games) $(pitching_team_games) $(batting_records_predict) $(pitching_records_predict) $(park_records) $(pitching_team_records) $(ratings538)
-	$(PYTHON_INTERPRETER) $< $(interim_data)
+$(merged_data): merged_data.py $(panel) $(bg) $(pg) $(ptg) \
+	$(br_predict) $(pr_predict) $(park_records) $(ptr_predict) \
+	$(btr_predict) $(ratings538)
+	$(PYTHON_INTERPRETER) $< $(interim_data) $(panel) $(merged_data)
 
 $(panel): panel.py $(game_logs)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(pitching_team_games): pitching_team_games.py $(events)
+$(ptg): pitching_team_games.py $(events) $(directory)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(pitching_games): pitching_games.py $(events)
+$(pg): pitching_games.py $(events)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(batting_games): batting_games.py $(events)
+$(bg): batting_games.py $(events)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(park_records): park_records.py $(game_logs)
+$(btr_predict): batting_team_records_predict.py $(btr)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(pitching_team_records): pitching_team_records.py $(events) $(directory)
+$(btr): batting_team_records.py $(events) $(directory)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(pitching_records_predict): pitching_records_predict.py $(pitching_records)
+$(ptr_predict): pitching_team_records_predict.py $(ptr)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(pitching_records): pitching_records.py $(events) $(directory)
+$(ptr): pitching_team_records.py $(events) $(directory)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(batting_records_predict): batting_records_predict.py $(batting_records)
+$(pr_predict): pitching_records_predict.py marcel.py $(pr) $(adj_events) $(people)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(batting_records): batting_records.py $(events) $(directory)
+$(pr): pitching_records.py $(adj_events) $(directory)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(br_predict): batting_records_predict.py marcel.py $(br) $(adj_events) $(people)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
+
+$(br): batting_records.py $(adj_events) $(directory)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(directory): directory.py $(rosters)
 	$(PYTHON_INTERPRETER) $< $(interim_data)
 
-$(ratings538): ratings538.py $(events)
+$(ratings538): ratings538.py $(raw_ratings538) $(teams)
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
+$(adj_events): adj_events.py $(events) $(game_logs) $(park_records)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(events): events.py
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
+$(park_records): park_records.py $(game_logs)
+	$(PYTHON_INTERPRETER) $< $(interim_data)
 
 $(game_logs): game_logs.py
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
@@ -177,17 +214,30 @@ $(game_logs): game_logs.py
 $(rosters): rosters.py
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
 
-$(people): people.py
+$(people): lahman_people.py $(raw_people)
 	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
+$(teams): lahman_teams.py $(raw_teams)
+	$(PYTHON_INTERPRETER) $< $(raw_data) $(interim_data)
+
 
 raw_events:
 	src/data/import_events.sh
 
-raw_538:
+# .FORCE
+$(raw_ratings538): .FORCE
 	src/data/import538.sh
 
-raw_lahman:
-	src/data/import_lahman.sh
+# switch to downloading whole directory
+$(raw_people):
+	src/data/import_people.sh
+
+$(raw_teams):
+	src/data/import_people.sh
+
+.FORCE:
+
+
 #################################################################################
 # Clearing
 #################################################################################

@@ -13,7 +13,7 @@ def main(interim):
     directory = directory.groupby(['PLAYER_ID']).agg('first')
 
     directory = directory[directory.index != '\x1a']
-    directory .to_pickle(Path(interim) / 'directory.pkl')
+    directory.to_pickle(Path(interim) / 'directory.pkl')
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
