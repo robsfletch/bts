@@ -10,6 +10,10 @@ def main(interim):
     ptr = pd.read_pickle(Path(interim) / 'pitching_team_records.pkl')
 
     ptr = ptr.sort_values(['PIT_TEAM_ID', 'year'])
+    ptr_pred = ptr.loc[:, ['AdjH', 'G']]
+    ptr_pred['p_team_pred_AdjHPG'] = weighted_avg(ptr, 'PIT_TEAM_ID', 'AdjH', 'G')
+    ptr_pred['p_team_pred_DefEff'] = weighted_avg(ptr, 'PIT_TEAM_ID', 'DefEff', 'G')
+
 
     ptr_pred = ptr[['AdjHPG', 'DefEff']]
     ptr_pred = ptr_pred.reset_index()
@@ -22,6 +26,16 @@ def main(interim):
     })
 
     pd.to_pickle(ptr_pred, Path(interim) / 'pitching_team_records_predict.pkl')
+
+def weighted_avg(df, id, metric, base):
+    df = df.sort_values([id, 'year'])
+
+    sum_metric = df.groupby(id)[metric].transform(lambda x: x.rolling(4, 1).sum())
+    sum_base = df.groupby(id)[base].transform(lambda x: x.rolling(4, 1).sum())
+    avg = (sum_metric / sum_base)
+
+    return avg
+
 
 
 if __name__ == '__main__':

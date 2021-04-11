@@ -7,21 +7,12 @@ def main_marcel(records, events, people, player_id, metric, base):
     records = records.loc[:, [metric, base, 'G']]
     records = fill_gaps(records, player_id)
 
-    merged = merge_data(records, people, player_id)
-    merged[metric] = merged[metric].astype('int')
-    merged['G'] = merged['G'].astype('int')
+    w = [7, 5, 4, 3]
 
-    lr = gen_league(events, metric, base)
-    merged['pred_' + metric + 'P' + base], merged['pred_' + base], merged['pred_' + metric] = \
-        marcel(merged, lr, player_id, metric, base)
+    result = marcel(records, events, people, w, player_id, metric, base)
 
-    merged = merged.reset_index()
-    merged['year'] = merged['year'] + 1
-    merged.set_index([player_id, 'year'])
-
-    merged = merged.rename(columns={'G': 'prev_G'})
-    merged = merged.loc[merged[base] != 0]
-    return merged
+    result = result.rename(columns={'G': 'prev_G'})
+    return result
 
 def fill_gaps(records, player_id):
     records = records.reset_index()
@@ -40,8 +31,41 @@ def fill_gaps(records, player_id):
 
     return records
 
+def marcel(records, events, people, w, player_id, metric, base):
+    full_records = add_age(records, people, player_id)
+    full_records[metric] = full_records[metric].astype('int')
+    full_records = full_records.sort_values([player_id, 'year'])
 
-def merge_data(records, people, player_id):
+    history = gen_history(full_records, player_id, metric, base)
+    player_game_logs = gen_player_log(events, player_id, metric, base)
+    league_record = gen_league(events, w, metric, base)
+
+    result = pd.merge(
+        player_game_logs.reset_index(),
+        history.reset_index(),
+        on=[player_id, 'year'],
+        how='left'
+    )
+    result = pd.merge(result, league_record, on=['year'], how='left')
+
+    result['pred_' + base] = est_base(result, base)
+    result['naive_rate'] = est_naive_rate(result, w, metric, base)
+    result['adj_rate'] = reg_to_league_mean(result, w, metric, base)
+    result['pred_' + metric + 'P' + base] = adjust_age(result)
+
+    result['pred_' + metric] = (result['pred_' + base] * result['pred_' + metric + 'P' + base]).astype('float')
+
+    result = result.set_index(['GAME_ID', player_id])
+    result = result[[
+        'pred_' + metric + 'P' + base,
+        'pred_' + metric,
+        'pred_' + base,
+        'G'
+    ]]
+
+    return result
+
+def add_age(records, people, player_id):
     records = records.reset_index()
 
     merged = pd.merge(
@@ -61,90 +85,94 @@ def merge_data(records, people, player_id):
 
     return merged
 
-def marcel(df, lr, player_id, metric, base):
-    w = [5, 4, 3]
+def gen_history(merged, player_id, metric, base):
+    group = merged.groupby([player_id])
 
-    pred_base = est_base(df, player_id, base)
-    pred_naive_rate = est_naive_rate(df, w, player_id, metric, base)
+    for lag in range(1, 4):
+        lag_name = 'L' + str(lag) + '_' + metric
+        merged[lag_name] = group[metric].shift(lag)
+        merged[lag_name] = merged[lag_name].fillna(0).astype('int')
 
-    league_adj_rate = reg_to_league_mean(df, pred_naive_rate, w, lr, player_id, base)
-    pred_rate = adjust_age(df['Age'], league_adj_rate)
+        lag_name = 'L' + str(lag) + '_' + base
+        merged[lag_name] = group[base].shift(lag)
+        merged[lag_name] = merged[lag_name].fillna(0).astype('int')
 
-    pred_amt = (pred_base * pred_rate).astype('float')
+    del merged[base]
+    del merged[metric]
 
-    return pred_rate, pred_base, pred_amt
+    return merged
 
-def gen_league(events, metric, base):
+def gen_player_log(events, player_id, metric, base):
+    bg = events.groupby(['GAME_ID', player_id]).agg({
+        metric: 'sum',
+        base: 'sum',
+        'Date': 'first',
+        'year': 'first',
+    })
+
+    bg = bg.sort_values([player_id, 'year', 'Date'])
+
+    bg[metric + '_cum'] = bg.groupby([player_id, 'year'])[metric].cumsum()
+    bg[base + '_cum'] = bg.groupby([player_id, 'year'])[base].cumsum()
+
+    bg[metric + '_cum'] = bg[metric + '_cum'] - bg[metric]
+    bg[base + '_cum'] = bg[base + '_cum'] - bg[base]
+
+    return bg
+
+def gen_league(events, w, metric, base):
     League = events[events.BAT_FLD_CD != 1].groupby('year')[[metric, base]].sum()
-    League.columns = ['League_count', 'League_base']
+    League.columns = ['L_count', 'L_base']
 
-    League['L0_League_rate'] = League['League_count'] / League['League_base']
-    League['L1_League_rate'] = League['L0_League_rate'].shift(1)
-    League['L2_League_rate'] = League['L0_League_rate'].shift(2)
     League = League.sort_values('year')
+    League['L_rate'] = League['L_count'] / League['L_base']
+    League['L1_L_rate'] = League['L_rate'].shift(1)
+    League['L2_L_rate'] = League['L_rate'].shift(2)
+    League['L3_L_rate'] = League['L_rate'].shift(3)
+    League['L_avg_rate'] = (w[1]*League['L1_L_rate'] + w[2]*League['L2_L_rate'] + w[3]*League['L3_L_rate']) / sum(w[1:4])
+
+    del League['L_count']
+    del League['L_base']
 
     return League
 
-def est_base(df, player_id, base):
-    group = df.groupby(player_id)[base]
-    L0 = group.shift(0).fillna(0)
-    L1 = group.shift(1).fillna(0)
-    L2 = group.shift(2).fillna(0)
-
-    pred_base = (.5 * L0 + .1 * L1 + 200).astype('float')
+def est_base(df, base):
+    pred_base = (.5 * df['L1_' + base] + .1 * df['L2_' + base] + 200).astype('float')
 
     return pred_base
 
-def est_naive_rate(df, w, player_id, metric, base):
-    group = df.groupby(player_id)[[metric, base]]
-    L0 = group.shift(0).fillna(0)
-    L1 = group.shift(1).fillna(0)
-    L2 = group.shift(2).fillna(0)
-
-    sum_metric = w[0]*L0[metric] + w[1]*L1[metric] + w[2]*L2[metric]
-    sum_base = w[0]*L0[base] + w[1]*L1[base] + w[2]*L2[base]
+def est_naive_rate(df, w, metric, base):
+    sum_metric = w[0]*df[metric + '_cum'] + w[1]*df['L1_' + metric] + w[2]*df['L2_' + metric] + w[3]*df['L3_' + metric]
+    sum_base = w[0]*df[base + '_cum'] + w[1]*df['L1_' + base] + w[2]*df['L2_' + base] + w[3]*df['L3_' + base]
     naive_rate = sum_metric / sum_base
 
     return naive_rate
 
-def reg_to_league_mean(df, naive_rate, w, lr, player_id, base):
-    temp = pd.merge(df.reset_index(), lr, on='year', how='left')
-    temp = temp.set_index([player_id, 'year'])
-
-    group = temp.groupby(player_id)[[base]]
-    temp['L0_' + base] = group.shift(0).fillna(0)
-    temp['L1_' + base] = group.shift(1).fillna(0)
-    temp['L2_' + base] = group.shift(2).fillna(0)
-
-    League_sum = (
-        w[0]*temp['L0_League_rate'] +
-        w[1]*temp['L1_League_rate'] +
-        w[2]*temp['L2_League_rate']
-    )
-
+def reg_to_league_mean(df, w, metric, base):
     League_base_weighted_sum = (
-        w[0]*temp['L0_League_rate']*temp['L0_' + base] +
-        w[1]*temp['L1_League_rate']*temp['L1_' + base] +
-        w[2]*temp['L2_League_rate']*temp['L2_' + base]
+        w[1]*df['L1_L_rate']*df['L1_' + base] +
+        w[2]*df['L2_L_rate']*df['L2_' + base] +
+        w[3]*df['L3_L_rate']*df['L3_' + base]
     )
-    sum_base = w[0]*temp['L0_' + base] + w[1]*temp['L1_' + base] + w[2]*temp['L2_' + base]
+
+    sum_base = w[1]*df['L1_' + base] + w[2]*df['L2_' + base] + w[3]*df['L3_' + base]
 
     League_mean_rate = League_base_weighted_sum / sum_base
-    League_mean_rate = League_mean_rate.where(sum_base > 0, League_sum / sum(w))
+    League_mean_rate = League_mean_rate.where(sum_base > 0, df['L_avg_rate'])
 
     reliability = sum_base / (1200 + sum_base)
 
-    adj_rate = League_mean_rate * (1 - reliability) + naive_rate * reliability
-    adj_rate = adj_rate.where(sum_base > 0, League_sum / sum(w))
+    adj_rate = League_mean_rate * (1 - reliability) + df['naive_rate'] * reliability
+    adj_rate = adj_rate.where(sum_base > 0, df['L_avg_rate'])
 
     return adj_rate
 
-def adjust_age(Age, adj_rate):
+def adjust_age(df):
     age_adj = np.where(
-        Age <= 29,
-        1 + (29 - Age)* .006,
-        1 + (29 - Age)* .003,
+        df.Age <= 29,
+        1 + (29 - df.Age)* .006,
+        1 + (29 - df.Age)* .003,
     )
-    pred_rate = (adj_rate * age_adj).astype('float')
+    pred_rate = (df['adj_rate'] * age_adj).astype('float')
 
     return pred_rate

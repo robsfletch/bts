@@ -26,7 +26,7 @@ def main(interim, processed):
         'PIT_HAND': 'float64',
         'opp_hands': 'float64',
         'b_avg_win': 'float64',
-        # 'own_p_pred_HPAB': 'float64',
+        # 'own_p_pred_HPPA': 'float64',
         'own_p_pred_AdjHPAdjPA': 'float64',
         'p_avg_game_score': 'float64',
         'p_own_avg_game_score': 'float64',

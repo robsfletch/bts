@@ -21,7 +21,6 @@ def main(interim):
         'prev_G': 'b_prev_G',
     })
 
-    br_pred = br_pred.set_index(['BAT_ID', 'year'])
     br_pred = br_pred.loc[:, [
         'b_prev_G', 'b_pred_AdjHPAdjPA', 'b_pred_AdjH', 'b_pred_AdjPA'
     ]]

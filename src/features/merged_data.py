@@ -74,7 +74,7 @@ def main(interim, in_file, out_file):
 
     ## BATTING SEASON RECORDS
     merged = merged.merge(
-        br_predict, on=['BAT_ID', 'year'], how='left',
+        br_predict, on=['BAT_ID', 'GAME_ID'], how='left',
     )
 
     merged = merged.merge(
@@ -87,7 +87,7 @@ def main(interim, in_file, out_file):
 
     ## PITCHING SEASON RECORDS
     merged = merged.merge(
-        pr_predict, on=['PIT_ID', 'year'], how='left',
+        pr_predict, on=['PIT_ID', 'GAME_ID'], how='left',
     )
 
     merged = merged.merge(
@@ -101,8 +101,8 @@ def main(interim, in_file, out_file):
 
     merged = merged.merge(
         pr_predict.add_prefix('own_'),
-        left_on = ['OWN_PIT_ID', 'year'],
-        right_on=['PIT_ID', 'year'],
+        left_on = ['OWN_PIT_ID', 'GAME_ID'],
+        right_on=['PIT_ID', 'GAME_ID'],
         how='left',
     )
 

@@ -22,7 +22,8 @@ def main(data_file, model_file, prediction_file):
         'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'park_h_factor', 'opp_hands',
-        'p_team_pred_AdjHPG'
+        'p_team_pred_AdjHPG', 'p_team_pred_DefEff',
+        'b_team_pred_AdjHPG'
     ]
     y_var = ['Win']
     vars = x_vars + y_var

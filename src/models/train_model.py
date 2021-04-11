@@ -53,7 +53,8 @@ def main(processed, models):
         'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'park_h_factor', 'opp_hands',
-        'p_team_pred_AdjHPG'
+        'p_team_pred_AdjHPG', 'p_team_pred_DefEff',
+        'b_team_pred_AdjHPG'
     ]
     y_var = ['Win']
     vars = x_vars + y_var
@@ -75,7 +76,8 @@ def model_current1():
         'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'park_h_factor', 'opp_hands',
-        'p_team_pred_AdjHPG'
+        'p_team_pred_AdjHPG', 'p_team_pred_DefEff',
+        'b_team_pred_AdjHPG'
     ]
     preprocessor =  ColumnTransformer(
         [('spot', 'passthrough', x_vars)],
@@ -269,7 +271,8 @@ def model_xb1():
         'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
         'park_h_factor', 'opp_hands',
-        'p_team_pred_AdjHPG'
+        'p_team_pred_AdjHPG', 'p_team_pred_DefEff',
+        'b_team_pred_AdjHPG'
     ]
     # x_vars = [
     #    'p_pred_HPAB', 'year',
@@ -296,13 +299,13 @@ def model_xb1():
         verbosity = 0,
         random_state = 0,
         eval_metric = 'auc',
-        max_depth = 1,
+        max_depth = 2,
         learning_rate = .01,
-        early_stopping_rounds=5,
-        n_estimators=1000,
+        early_stopping_rounds=3,
+        n_estimators=200,
         use_label_encoder = False,
-        # subsample=0.9,
-        # colsample_bynode=0.33,
+        subsample=0.6,
+        colsample_bynode=0.8,
     )
 
     fitted_model = Pipeline([
@@ -314,8 +317,9 @@ def model_xb1():
 
     params = {
         'clf__max_depth': [1, 2, 4],
-        # 'clf__subsample': [.7, .8, .9],
-        "clf__learning_rate": [.1, .01, .001]
+        # 'clf__subsample': [.8, .9, 1],
+        # 'clf__colsample_bytree': [.5, .6, .7],
+        'clf__learning_rate': [.1, .01, .001]
     }
 
     cv = StratifiedKFold(shuffle = True, random_state=1)
@@ -353,9 +357,9 @@ def model_xbrf1():
     ])
 
     params = {
-        # 'clf__max_depth': [4, 6, 8],
+        'clf__max_depth': [2],
         # "clf__n_estimators": [100, 300, 900],
-        "clf__learning_rate": [.1, .01, .001]
+        "clf__learning_rate": [.01]
     }
 
     cv = StratifiedKFold(shuffle = True, random_state=1)

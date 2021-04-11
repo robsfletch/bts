@@ -59,7 +59,7 @@ def main(interim):
 
     record['AdjHPPA'] = record['AdjH'] / record['AdjPA']
     record['AdjHPG'] = record['AdjH'] / record['G']
-    record['DefEff'] = (1 - record['H'] + record['HR']) / \
+    record['DefEff'] = 1 - (record['H'] - record['HR']) / \
         (record['AB'] - record['SO'] - record['HR'] + record['SH'] + record['SF'])
         
     record.to_pickle(Path(interim) / 'pitching_team_records.pkl')
