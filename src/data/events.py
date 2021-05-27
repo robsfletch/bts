@@ -16,7 +16,7 @@ def main(input_filepath, output_filepath):
     header_file = Path(input_filepath) / 'fields.csv'
     ev_dir = Path(input_filepath) / 'events'
     all_files = glob.glob(str(ev_dir / "Events*.txt"))
-
+    
     fields = pd.read_csv(header_file)
     header = fields['Header'].to_numpy()
 

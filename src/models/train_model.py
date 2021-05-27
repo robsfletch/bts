@@ -39,7 +39,8 @@ from sklearn.calibration import CalibratedClassifierCV
 
 import cloudpickle
 import click
-import modelsetup
+
+from src.models import top_k_win
 
 @click.command()
 @click.argument('processed', type=click.Path(exists=True))
@@ -57,12 +58,14 @@ def main(processed, models):
         'b_team_pred_AdjHPG'
     ]
     y_var = ['Win']
-    vars = x_vars + y_var
+    vars = x_vars + y_var + ['Date', 'GAME_ID', 'BAT_ID']
 
     train = main_data.loc[
         (main_data.year < 2000) & (main_data.year >= 1960),
         vars
     ]
+
+    train = train.reset_index().set_index(['Date', 'GAME_ID', 'BAT_ID'])
 
     fitted_model = model_current1()
     fitted_model.fit(train[x_vars], train['Win'].astype('int'))
@@ -87,9 +90,10 @@ def model_current1():
     clf = SGDClassifier(
         loss='log',
         penalty='elasticnet',
-        l1_ratio=1,
+        l1_ratio=.25,
         random_state=0,
-        max_iter = 1000
+        max_iter = 1000,
+        alpha = .003
     )
 
     cv_cal = StratifiedKFold(n_splits=2, shuffle = True, random_state=1)
@@ -104,16 +108,16 @@ def model_current1():
     ])
 
     params = {
-        "clf__base_estimator__alpha": [.0003, .001, .003, .005, .008, .01],
+        "clf__base_estimator__alpha": [.001, .003, .005, .008],
         "clf__base_estimator__l1_ratio": [0, .25, .5, .75, 1],
+        # "poly__degree": [2, 3],
         # "poly__interaction_only": [True, False],
-        # "poly__degree": [2, 3]
     }
 
     cv = StratifiedKFold(shuffle = True, random_state=1)
     gs = GridSearchCV(
         fitted_model, params, cv=cv, n_jobs=-1, verbose=10,
-        refit='roc_auc', scoring='roc_auc',
+        scoring=top_k_win.top_k_rate,
     )
 
     return gs
@@ -123,7 +127,9 @@ def model_nn1():
     x_vars = [
         'spot', 'home', 'b_pred_HPPA', 'p_pred_HPPA',
         'rating_rating_prob', 'rating_pitcher_rgs',
-        'park_h_factor', 'opp_hands'
+        'park_h_factor', 'opp_hands',
+        'p_team_pred_AdjHPG', 'p_team_pred_DefEff',
+        'b_team_pred_AdjHPG'
     ]
     # x_vars = [
     #     'spot', 'home', 'b_pred_HPPA', 'p_pred_HPAB', 'park_factor', 'year',
@@ -159,19 +165,19 @@ def model_nn1():
         ('clf', clf),
     ])
 
-    # params = {
-    #     "clf__hidden_layer_dim": [5, 8],
-    #     "clf__optimizer__learning_rate": [1e-5, 4e-5, 1e-4, 4e-4]
-    # }
-    #
-    # # cv = StratifiedKFold(n_splits=3, shuffle = True, random_state=1)
-    # gs = GridSearchCV(
-    #     fitted_model, params, refit='AUC', cv=3,
-    #     scoring='roc_auc', n_jobs=-1, verbose=100
-    # )
+    params = {
+        "clf__hidden_layer_dim": [5, 8],
+        "clf__optimizer__learning_rate": [1e-5, 4e-5, 1e-4, 4e-4]
+    }
+
+    cv = StratifiedKFold(shuffle = True, random_state=1)
+    gs = GridSearchCV(
+        fitted_model, params, cv=cv, n_jobs=-1, verbose=10,
+        scoring=top_k_win.top_k_rate,
+    )
 
 
-    return fitted_model
+    return gs
 
 def get_clf(hidden_layer_dim, meta):
     n_features_in_ = meta["n_features_in_"]
@@ -299,10 +305,10 @@ def model_xb1():
         verbosity = 0,
         random_state = 0,
         eval_metric = 'auc',
-        max_depth = 2,
-        learning_rate = .01,
+        max_depth = 4,
+        learning_rate = .1,
         early_stopping_rounds=3,
-        n_estimators=200,
+        n_estimators=500,
         use_label_encoder = False,
         subsample=0.6,
         colsample_bynode=0.8,
@@ -316,20 +322,20 @@ def model_xb1():
     ])
 
     params = {
-        'clf__max_depth': [1, 2, 4],
+        # 'clf__max_depth': [3, 4, 5],
         # 'clf__subsample': [.8, .9, 1],
         # 'clf__colsample_bytree': [.5, .6, .7],
-        'clf__learning_rate': [.1, .01, .001]
+        # 'clf__learning_rate': [.1, ..01]
     }
 
     cv = StratifiedKFold(shuffle = True, random_state=1)
     gs = GridSearchCV(
-        fitted_model, params, refit='AUC', cv=cv,
-        scoring='roc_auc', n_jobs=-1, verbose=20
+        fitted_model, params, cv=cv, n_jobs=-1, verbose=10,
+        scoring=top_k_win.top_k_rate,
     )
 
 
-    return gs
+    return fitted_model
 
 def model_xbrf1():
     x_vars = [
